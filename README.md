@@ -143,12 +143,9 @@ Laravel debe enviar el `thread_id` (para persistencia de memoria) y los datos de
 
 ```json
 {
-  "thread_id": "submission_uuid_999", 
-  "file_path": "/path/to/firm/storage/submission.docx",
-  "metadata": {
-    "firm_id": "101",
-    "requested_by": "System_Admin"
-  }
+  "thread_id": "case_uuid_123",    // ID único para mantener la memoria del proceso
+  "is_file": true,               // true = procesar documento, false = mensaje de texto
+  "user_input": "path/to/file.pdf" // Ruta del archivo o aclaración del usuario
 }
 ```
 
