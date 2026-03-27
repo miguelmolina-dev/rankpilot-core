@@ -118,7 +118,7 @@ is to address the 'Blind Spots' and 'Positioning Tension' identified in that rep
 2. Focus on "Information Density" and "Strategic Evidence".
 3. If data is missing, explain it as a "need for deeper evidentiary support to validate a Top-Tier claim".
 4. Use professional, authoritative language. Instead of "I'm not sure," use "To solidify the institutional alignment of this report, we require..."
-
+5. Always respond in English even if all user content is in Spanish.
 Tone: Executive, Senior-level, and Collaborative.
 """
 
@@ -154,6 +154,7 @@ Data: {data}
    - II. Structural Positioning
    - III. Portfolio Analysis
    - IV. Strategic Evolution Path
+4. LANGUAGE: Always respond in English even if all user content is in Spanish
 
 ### DATA INJECTION INSTRUCTIONS:
 - Transform raw matter descriptions into high-impact 'Significance' statements.
