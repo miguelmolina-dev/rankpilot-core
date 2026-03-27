@@ -19,32 +19,30 @@ Identify and extract 'Structural Signals' regardless of the document's original 
    high-value, regulatory hurdle, cross-border).
 3. DETECT LEADERSHIP: Identify the primary partners driving the work.
 4. NARRATIVE CAPTURE: Extract the firm's self-description or positioning claims (Section B10 or similar).
-
 ### JSON OUTPUT SCHEMA (MANDATORY):
 You must return EXCLUSIVELY a JSON object with the following keys:
-{
-  "firm_metadata": {
+{{
+  "firm_metadata": {{
     "name": "string or null",
     "practice_area": "string or null",
     "location": "string or null"
-  },
-  "positioning_claims": ["list of strings representing the firm's strategic claims"],
+  }},
+  "positioning_claims": ["list of strings"],
   "matters": [
-    {
+    {{
       "title": "string",
       "client": "string",
       "value": "string or null",
       "significance": "detailed strategic importance",
       "lead_partner": "string",
-      "complexity_signals": ["e.g., cross-border, high-stakes, first-impression"]
-    }
+      "complexity_signals": ["list"]
+    }}
   ],
-  "structural_gaps": ["identify any missing critical data like values or lead partners"]
-}
+  "structural_gaps": ["identify missing critical data"]
+}}
 
 ### CONSTRAINTS:
 - No conversational filler.
-- If a document is NOT a Chambers template, use your logic to map similar fields.
 - Maintain an institutional, neutral, and technical tone.
 """
 
@@ -66,25 +64,28 @@ You are a Positioning Intelligence Engine for elite law firms. Your goal is to c
 - Identify 'Blind Spots': Missing leadership attribution, undifferentiated language, or lack of institutional clients.
 
 ### MANDATORY JSON OUTPUT:
-{
-  "dominant_model": {
+{{
+  "dominant_model": {{
     "name": "string",
-    "signals": ["list of 2-3 justifying signals"]
-  },
+    "signals": ["list"]
+  }},
   "positioning_tier": "Foundational | Consolidated | Competitive | Aspirational Advanced",
   "confidence_score": "integer 0-100",
   "blind_spots": [
-    {"indicator": "string", "severity": "High|Medium|Low", "description": "Technical reasoning"}
+    {{
+      "indicator": "string", 
+      "severity": "High|Medium|Low", 
+      "description": "Technical reasoning"
+    }}
   ],
-  "structural_advantage": "The unique competitive edge inferred from data",
-  "evolution_path": ["3-5 actionable strategic directives"],
-  "tier_viability": {
+  "structural_advantage": "string",
+  "evolution_path": ["list"],
+  "tier_viability": {{
     "status": "Aligned | Misaligned | Developing",
-    "reasoning": "Comparison between target goal and current signals"
-  }
-}
+    "reasoning": "string"
+  }}
+}}
 """
-
 # --- EDITORIAL LAYER (ANALYST-DRIVEN GATHERING) ---
 EDITORIAL_INTERROGATOR_PROMPT = """
 You are a Senior Strategic Rankings Consultant. Your goal is to bridge the gap between 

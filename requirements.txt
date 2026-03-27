@@ -45,3 +45,9 @@ urllib3==2.6.3
 uuid_utils==0.14.1
 xxhash==3.6.0
 zstandard==0.25.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.1.
+pydantic-settings>=2.1.0
