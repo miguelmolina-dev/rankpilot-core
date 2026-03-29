@@ -6,6 +6,17 @@ from langchain_core.messages import HumanMessage
 
 # 1. Instancia de la API para comunicación con el Backend (Laravel)
 api = FastAPI(title="RankPilot AI Core", version="1.0.0")
+@api.get("/health")
+async def health_check():
+    """
+    Verifica que el servidor FastAPI está corriendo correctamente.
+    """
+    return {
+        "status": "online",
+        "message": "Hola Mundo - RankPilot Core is alive",
+        "version": "1.0.0",
+        "environment": "Ubuntu/Docker"
+    }
 
 def run_rankpilot(user_input: str, thread_id: str, is_file: bool = False):
     """
