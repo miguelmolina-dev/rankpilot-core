@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>Descripci&oacute;n general</title>
+            <style>
+/* From extension vscode.github */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+.vscode-dark img[src$=\#gh-light-mode-only],
+.vscode-light img[src$=\#gh-dark-mode-only],
+.vscode-high-contrast:not(.vscode-high-contrast-light) img[src$=\#gh-light-mode-only],
+.vscode-high-contrast-light img[src$=\#gh-dark-mode-only] {
+	display: none;
+}
+
+</style>
+            
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/markdown.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/Microsoft/vscode/extensions/markdown-language-features/media/highlight.css">
+<style>
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe WPC', 'Segoe UI', system-ui, 'Ubuntu', 'Droid Sans', sans-serif;
+                font-size: 14px;
+                line-height: 1.6;
+            }
+        </style>
+        <style>
+.task-list-item {
+    list-style-type: none;
+}
+
+.task-list-item-checkbox {
+    margin-left: -20px;
+    vertical-align: middle;
+    pointer-events: none;
+}
+</style>
+<style>
+:root {
+  --color-note: #0969da;
+  --color-tip: #1a7f37;
+  --color-warning: #9a6700;
+  --color-severe: #bc4c00;
+  --color-caution: #d1242f;
+  --color-important: #8250df;
+}
+
+</style>
+<style>
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-note: #2f81f7;
+    --color-tip: #3fb950;
+    --color-warning: #d29922;
+    --color-severe: #db6d28;
+    --color-caution: #f85149;
+    --color-important: #a371f7;
+  }
+}
+
+</style>
+<style>
+.markdown-alert {
+  padding: 0.5rem 1rem;
+  margin-bottom: 16px;
+  color: inherit;
+  border-left: .25em solid #888;
+}
+
+.markdown-alert>:first-child {
+  margin-top: 0
+}
+
+.markdown-alert>:last-child {
+  margin-bottom: 0
+}
+
+.markdown-alert .markdown-alert-title {
+  display: flex;
+  font-weight: 500;
+  align-items: center;
+  line-height: 1
+}
+
+.markdown-alert .markdown-alert-title .octicon {
+  margin-right: 0.5rem;
+  display: inline-block;
+  overflow: visible !important;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.markdown-alert.markdown-alert-note {
+  border-left-color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-note .markdown-alert-title {
+  color: var(--color-note);
+}
+
+.markdown-alert.markdown-alert-important {
+  border-left-color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-important .markdown-alert-title {
+  color: var(--color-important);
+}
+
+.markdown-alert.markdown-alert-warning {
+  border-left-color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-warning .markdown-alert-title {
+  color: var(--color-warning);
+}
+
+.markdown-alert.markdown-alert-tip {
+  border-left-color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-tip .markdown-alert-title {
+  color: var(--color-tip);
+}
+
+.markdown-alert.markdown-alert-caution {
+  border-left-color: var(--color-caution);
+}
+
+.markdown-alert.markdown-alert-caution .markdown-alert-title {
+  color: var(--color-caution);
+}
+
+</style>
+        
+        </head>
+        <body class="vscode-body vscode-light">
+            <h2 id="descripción-general">Descripción general</h2>
+<p>Este archivo implementa un <em>pipeline</em> con estado y basado en nodos para procesar documentos de bufetes de abogados. Orquesta un flujo de trabajo desde la ingesta del documento hasta la extracción de datos, análisis estratégico, interrogación opcional al usuario y generación final de informes LaTeX/PDF. Cada nodo actualiza un diccionario <code>AgentState</code> compartido para avanzar en el flujo de trabajo.</p>
+<h2 id="clases">Clases</h2>
+<p>Ninguna</p>
+<h2 id="funciones-y-métodos">Funciones y Métodos</h2>
+<table>
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Parámetros</th>
+<th>Responsabilidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ingestion_node</code></td>
+<td><code>state: AgentState</code></td>
+<td>Analiza un archivo de documento a texto plano, valida la existencia de la ruta del archivo y cambia el estado al paso de extracción.</td>
+</tr>
+<tr>
+<td><code>extraction_node</code></td>
+<td><code>state: AgentState</code></td>
+<td>Invoca una cadena de extracción resistente para convertir texto sin procesar en datos JSON estructurados (metadatos de la firma, asuntos, narrativa).</td>
+</tr>
+<tr>
+<td><code>analysis_node</code></td>
+<td><code>state: AgentState</code></td>
+<td>Realiza un análisis estratégico de alto nivel usando GPT-4o, calcula una puntuación de confianza y enruta hacia la generación de informes o la interrogación al usuario según un umbral (≥65%).</td>
+</tr>
+<tr>
+<td><code>interrogator_node</code></td>
+<td><code>state: AgentState</code></td>
+<td>Genera preguntas para el usuario conscientes del contexto para abordar lagunas en el análisis usando una persona Editorial, luego pausa el flujo de trabajo para la entrada del usuario.</td>
+</tr>
+<tr>
+<td><code>writer_node</code></td>
+<td><code>state: dict</code></td>
+<td>Construye un documento LaTeX con una portada estandarizada y contenido generado por IA, luego lo compila a un archivo PDF.</td>
+</tr>
+</tbody>
+</table>
+
+            
+            
+        </body>
+        </html>
