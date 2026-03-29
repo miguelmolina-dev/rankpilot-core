@@ -3,6 +3,8 @@ from typing_extensions import TypedDict
 from langgraph.graph.message import add_messages
 
 class AgentState(TypedDict):
+    file_path: str
+    doc_text: str
     # Historial de mensajes (para el chat dialéctico)
     messages: Annotated[list, add_messages]
     # Datos crudos extraídos del documento

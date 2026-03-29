@@ -56,9 +56,9 @@ def create_rankpilot_graph():
     # After the Interrogator speaks, the graph pauses for user input.
     # Once the user replies, we route back to 'extraction' to update 
     # the structured JSON with the new strategic details.
-    workflow.add_edge("interrogation", "extraction")
+    workflow.add_edge("interrogation", END) 
 
-    # 6. Final Exit
+# 6. Final Exit
     workflow.add_edge("writing", END)
 
     # 7. Persistence Layer (The "Memory" for Laravel's session_id)
