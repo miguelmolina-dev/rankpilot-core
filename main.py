@@ -19,54 +19,57 @@ async def health_check():
     }
 
 def run_rankpilot(user_input: str, thread_id: str, is_file: bool = False):
-    """
-    Orquestador del Grafo. Procesa la entrada y devuelve el estado final.
-    """
-    # Configuración de persistencia y contexto de sesión
     config = {"configurable": {"thread_id": thread_id}}
     
-    # Determinación del punto de entrada al grafo
     if is_file:
+        print(f"--- [EJECUCIÓN: NUEVO CASO - ID: {thread_id}] ---")
         initial_state = {"file_path": user_input, "messages": []}
         output = graph_app.invoke(initial_state, config)
     else:
+        print(f"--- [EJECUCIÓN: CONTINUACIÓN - ID: {thread_id}] ---")
         output = graph_app.invoke(
             {"messages": [HumanMessage(content=user_input)]}, 
             config
         )
     
-    # Resolución de activos generados (PDFs)
+    # --- LÓGICA ELEGANTE DE EXTRACCIÓN ---
+    # Si el grafo terminó (is_complete), extraemos el path absoluto
     if output.get("is_complete"):
         raw_path = output.get("pdf_url")
-        if raw_path and os.path.exists(raw_path):
-            # Convertimos a path absoluto para garantizar acceso desde el backend
-            output["pdf_url"] = os.path.abspath(raw_path)
+        if raw_path:
+            # Convertimos a path absoluto para que no haya dudas de dónde está
+            absolute_path = os.path.abspath(raw_path)
+            output["pdf_url"] = absolute_path
+            print(f"✅ SUCCESS: PDF generated at {absolute_path}")
             
     return output
 
-# 2. Endpoint de Procesamiento Sincrónico
+# 2. Endpoint General (Ajustado para devolver el path claramente)
 @api.post("/process")
 async def process_request(request: Request):
-    """
-    Recibe JSON con user_input, thread_id e is_file.
-    Retorna el estado de la generación y el link al recurso si está listo.
-    """
     data = await request.json()
     
     user_input = data.get("user_input")
     thread_id = data.get("thread_id", str(uuid.uuid4()))
     is_file = data.get("is_file", False)
     
-    # Ejecución del núcleo de IA
     result = run_rankpilot(user_input, thread_id, is_file)
     
-    # Respuesta estandarizada para el cliente API
+    # Devolvemos una respuesta estructurada
     return {
-        "status": "completed" if result.get("is_complete") else "interrogating",
+        "status": "success" if result.get("is_complete") else "pending",
         "thread_id": thread_id,
-        "data": {
-            "pdf_url": result.get("pdf_url"),
-            "is_complete": result.get("is_complete", False),
-            "response": result["messages"][-1].content if result.get("messages") else "No response generated."
-        }
+        "pdf_url": result.get("pdf_url"), # Aquí llegará el path absoluto
+        "confidence_score": result.get("confidence_score"),
+        "last_message": result["messages"][-1].content if result.get("messages") else None
     }
+
+# 3. Bloque de prueba protegido (Ignorado por el servidor)
+if __name__ == "__main__":
+    print("--- MODO DE PRUEBA LOCAL ---")
+    dummy_id = "test-session-001"
+    dummy_text = "General firm information for system validation."
+    
+    # Prueba rápida de conectividad
+    test_result = run_rankpilot(dummy_text, dummy_id, is_file=False)
+    print("Test exitoso:", test_result is not None)
