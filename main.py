@@ -1,75 +1,79 @@
 import os
 import uuid
-from fastapi import FastAPI, Request
+import logging
+from fastapi import FastAPI, Request, HTTPException
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, Any
 from core.graph import app as graph_app 
 from langchain_core.messages import HumanMessage
 
-# 1. Instancia de la API para comunicación con el Backend (Laravel)
-api = FastAPI(title="RankPilot AI Core", version="1.0.0")
+# Configuración de Logs para ver errores en la consola de Ubuntu
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+api = FastAPI(title="RankPilot AI Core", version="1.1.0")
+
+# 1. Definición del Esquema de Entrada (Pydantic)
+# Esto soluciona el problema de False/false y llaves faltantes automáticamente.
+class ProcessRequest(BaseModel):
+    user_input: str
+    thread_id: Optional[str] = Field(default_factory=lambda: str(uuid.uuid4()))
+    is_file: bool = False
+    metadata: Optional[Dict[str, Any]] = {}
+
+# 2. Endpoint de Salud (Señales de Vida)
 @api.get("/health")
 async def health_check():
-    """
-    Verifica que el servidor FastAPI está corriendo correctamente.
-    """
-    return {
-        "status": "online",
-        "message": "Hola Mundo - RankPilot Core is alive",
-        "version": "1.0.0",
-        "environment": "Ubuntu/Docker"
-    }
+    return {"status": "online", "message": "RankPilot Core is alive"}
 
-def run_rankpilot(user_input: str, thread_id: str, is_file: bool = False):
-    config = {"configurable": {"thread_id": thread_id}}
+def run_rankpilot(req: ProcessRequest):
+    """
+    Orquestador con Inyección de Estado Seguro.
+    """
+    config = {"configurable": {"thread_id": req.thread_id}}
     
-    if is_file:
-        print(f"--- [EJECUCIÓN: NUEVO CASO - ID: {thread_id}] ---")
-        initial_state = {"file_path": user_input, "messages": []}
+    # Construcción del estado inicial asegurando que TODAS las llaves existan
+    # Esto evita que el Grafo explote por llaves inexistentes.
+    initial_state = {
+        "file_path": req.user_input if req.is_file else None,
+        "is_file": req.is_file,
+        "messages": [HumanMessage(content=req.user_input)] if not req.is_file else [],
+        "metadata": req.metadata,
+        "is_complete": False,
+        "doc_text": None
+    }
+    
+    try:
+        # Ejecución del Grafo
         output = graph_app.invoke(initial_state, config)
-    else:
-        print(f"--- [EJECUCIÓN: CONTINUACIÓN - ID: {thread_id}] ---")
-        output = graph_app.invoke(
-            {"messages": [HumanMessage(content=user_input)]}, 
-            config
-        )
-    
-    # --- LÓGICA ELEGANTE DE EXTRACCIÓN ---
-    # Si el grafo terminó (is_complete), extraemos el path absoluto
-    if output.get("is_complete"):
-        raw_path = output.get("pdf_url")
-        if raw_path:
-            # Convertimos a path absoluto para que no haya dudas de dónde está
-            absolute_path = os.path.abspath(raw_path)
-            output["pdf_url"] = absolute_path
-            print(f"✅ SUCCESS: PDF generated at {absolute_path}")
-            
-    return output
+        return output
+    except Exception as e:
+        logger.error(f"Error crítico en la ejecución del Grafo: {e}")
+        raise ValueError(f"Graph Execution Error: {str(e)}")
 
-# 2. Endpoint General (Ajustado para devolver el path claramente)
+# 3. Endpoint de Procesamiento con Validación Automática
 @api.post("/process")
-async def process_request(request: Request):
-    data = await request.json()
-    
-    user_input = data.get("user_input")
-    thread_id = data.get("thread_id", str(uuid.uuid4()))
-    is_file = data.get("is_file", False)
-    
-    result = run_rankpilot(user_input, thread_id, is_file)
-    
-    # Devolvemos una respuesta estructurada
-    return {
-        "status": "success" if result.get("is_complete") else "pending",
-        "thread_id": thread_id,
-        "pdf_url": result.get("pdf_url"), # Aquí llegará el path absoluto
-        "confidence_score": result.get("confidence_score"),
-        "last_message": result["messages"][-1].content if result.get("messages") else None
-    }
+async def process_request(req: ProcessRequest):
+    try:
+        logger.info(f"--- Procesando Thread: {req.thread_id} ---")
+        
+        result = run_rankpilot(req)
+        
+        # Resolución de archivos
+        pdf_url = result.get("pdf_url")
+        if pdf_url and os.path.exists(pdf_url):
+            pdf_url = os.path.abspath(pdf_url)
 
-# 3. Bloque de prueba protegido (Ignorado por el servidor)
-if __name__ == "__main__":
-    print("--- MODO DE PRUEBA LOCAL ---")
-    dummy_id = "test-session-001"
-    dummy_text = "General firm information for system validation."
-    
-    # Prueba rápida de conectividad
-    test_result = run_rankpilot(dummy_text, dummy_id, is_file=False)
-    print("Test exitoso:", test_result is not None)
+        return {
+            "status": "completed" if result.get("is_complete") else "interrogating",
+            "thread_id": req.thread_id,
+            "data": {
+                "pdf_url": pdf_url,
+                "is_complete": result.get("is_complete", False),
+                "response": result["messages"][-1].content if result.get("messages") else "No response."
+            }
+        }
+    except Exception as e:
+        # En lugar de un 500 genérico, devolvemos un 400 o 500 con el error real
+        logger.error(f"Error en el endpoint /process: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
