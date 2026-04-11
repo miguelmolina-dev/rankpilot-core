@@ -1,10 +1,8 @@
 import os
-import base64
-from langgraph.checkpoint.memory import MemorySaver
-from src.core.workflow import build_workflow
-from src.core.state import AgentState
+import requests
 from src.io.base64_encoder import encode_file_to_base64
-from src.core.schemas import Legal500Submission
+
+API_BASE_URL = "http://localhost:8000"
 
 def batch_answer_questions(gaps):
     answers = {}
@@ -30,75 +28,71 @@ def batch_answer_questions(gaps):
 
 
 def main():
-    print("Initializing workflow with checkpointer...")
-    memory = MemorySaver()
-    workflow = build_workflow(checkpointer=memory, interrupt_before=["assembly_node"])
+    print("--- RankPilot Interactive API Simulation ---")
+    try:
+        filepath = input("Enter the path to the document to process (e.g., test.pdf): ").strip()
+    except EOFError:
+        print("EOF encountered. Using default mock path.")
+        filepath = "test.pdf"
 
-    # Initialize state
-    dummy_content = b"Dummy PDF content"
-    b64_string = base64.b64encode(dummy_content).decode('utf-8')
+    if not os.path.exists(filepath):
+        print(f"Warning: File {filepath} does not exist. Creating a dummy file.")
+        with open(filepath, "wb") as f:
+            f.write(b"Dummy PDF content")
 
-    initial_state: AgentState = {
-        "base64_documents": [{"filename": "test.pdf", "base64": b64_string}],
-        "decoded_file_paths": [],
-        "submission_type": "Legal500",
-        "submission": None,
-        "gaps": [],
-        "questions": [],
-        "messages": [],
-        "current_step": "init",
-        "errors": []
-    }
+    print(f"Encoding {filepath} to base64...")
+    b64_string = encode_file_to_base64(filepath)
+    if not b64_string:
+        print("Failed to encode file.")
+        return
 
-    config = {"configurable": {"thread_id": "test_thread"}}
+    print(f"\nSending POST request to {API_BASE_URL}/process ...")
+    try:
+        response = requests.post(f"{API_BASE_URL}/process", json={
+            "filename": os.path.basename(filepath),
+            "base64": b64_string
+        })
+        response.raise_for_status()
+        process_data = response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"API request failed: {e}")
+        print("Make sure the API server is running on localhost:8000")
+        return
 
-    print("Running workflow...")
-    for event in workflow.stream(initial_state, config=config):
-        for k, v in event.items():
-            print(f"Executed node: {k}")
+    print("Response received.")
 
-    # Check state after interruption
-    current_state = workflow.get_state(config)
-    state_values = current_state.values
+    status = process_data.get("status")
+    thread_id = process_data.get("thread_id")
+    gaps = process_data.get("gaps", [])
 
-    gaps = state_values.get("gaps", [])
-    if gaps:
+    if status == "interrupted" and gaps:
+        print(f"\nWorkflow interrupted. Thread ID: {thread_id}")
         answers = batch_answer_questions(gaps)
 
-        # In a real scenario we'd use the answers to update the submission.
-        # Let's mock the update to clear gaps so it proceeds to assembly.
-        print("Updating state to clear gaps...")
-        workflow.update_state(config, {"gaps": []})
+        print(f"Sending POST request to {API_BASE_URL}/resume ...")
+        try:
+            resume_response = requests.post(f"{API_BASE_URL}/resume", json={
+                "thread_id": thread_id,
+                "answers": answers
+            })
+            resume_response.raise_for_status()
+            resume_data = resume_response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"API resume request failed: {e}")
+            return
 
-        print("Resuming workflow...")
-        for event in workflow.stream(None, config=config):
-            for k, v in event.items():
-                print(f"Executed node: {k}")
+        print("Resume response received.")
     else:
-        print("No gaps found, workflow finished.")
+        print("\nWorkflow completed without interruptions.")
+        resume_data = process_data
 
-    # Base64 Render final document
-    print("\n--- Final Base64 Output ---")
-    processed_dir = "data/processed"
-    if os.path.exists(processed_dir):
-        files = os.listdir(processed_dir)
-        docx_files = [f for f in files if f.endswith(".docx")]
-        if docx_files:
-            # Get the most recently created docx
-            latest_file = max(docx_files, key=lambda f: os.path.getctime(os.path.join(processed_dir, f)))
-            filepath = os.path.join(processed_dir, latest_file)
-            print(f"Encoding file: {filepath}")
-            b64_output = encode_file_to_base64(filepath)
-            if b64_output:
-                # Print only first 100 and last 100 chars to avoid flooding the console
-                print(f"Base64 string (truncated): {b64_output[:100]}...{b64_output[-100:]}")
-            else:
-                print("Failed to encode base64.")
-        else:
-            print("No .docx files found in data/processed")
+    final_base64 = resume_data.get("final_base64")
+    if final_base64:
+        print("\n--- Final Base64 Output from API ---")
+        print(f"Base64 string (truncated): {final_base64[:100]}...{final_base64[-100:]}")
+        print("------------------------------------\n")
     else:
-        print(f"Directory {processed_dir} does not exist.")
-    print("---------------------------\n")
+        print("\nNo final base64 string returned from the API.")
 
 if __name__ == "__main__":
     main()
