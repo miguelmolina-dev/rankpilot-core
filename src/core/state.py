@@ -25,6 +25,9 @@ class AgentState(TypedDict):
     # Dynamic questions generated to cover gaps
     questions: List[str]
 
+    # Base64 output representation of the final document
+    output_base64: Optional[str]
+
     # Optional fields for tracking process
     messages: Annotated[list, operator.add]
     current_step: str
