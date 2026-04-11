@@ -1,8 +1,8 @@
 from typing import List
 from pydantic import BaseModel, Field
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
+from src.core.llm import get_llm
 
 class StrategicQuestions(BaseModel):
     questions: List[str] = Field(
@@ -22,7 +22,7 @@ def interrogator_node(state: AgentState) -> dict:
 
     if gaps:
         try:
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.2)
+            llm = get_llm(temperature=0.2)
             structured_llm = llm.with_structured_output(StrategicQuestions)
 
             system_prompt = (

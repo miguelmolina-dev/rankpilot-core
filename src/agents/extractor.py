@@ -1,8 +1,8 @@
 import os
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 
 from src.core.state import AgentState
+from src.core.llm import get_llm
 from src.core.schemas import Legal500Submission, BaseSubmission
 from src.io.base64_handler import decode_base64_document
 from src.io.pdf_parser import extract_text_from_pdf
@@ -58,7 +58,7 @@ def ingestion_node(state: AgentState) -> dict:
     if extracted_text.strip():
         updates["messages"].append("Ingestion node: Extracting and mapping data from files using AI agent.")
         try:
-            llm = ChatOpenAI(model="gpt-4o", temperature=0)
+            llm = get_llm(temperature=0)
 
             # Select schema based on sub_type
             schema_class = BaseSubmission
