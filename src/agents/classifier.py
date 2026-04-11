@@ -1,16 +1,18 @@
 from src.core.state import AgentState
 
-def classification_node(state: AgentState) -> AgentState:
+def classification_node(state: AgentState) -> dict:
     """
     Classification Node:
     Identifies the submission_type (e.g. Legal500, Chambers).
     """
-    state["current_step"] = "classification"
+    updates = {"current_step": "classification", "messages": []}
 
+    submission_type = state.get("submission_type")
     # Simple logic: If not provided, we try to classify.
-    if not state.get("submission_type"):
+    if not submission_type:
         # For demonstration, we assume we classified it as 'Legal500' based on content
-        state["submission_type"] = "Legal500"
+        submission_type = "Legal500"
+        updates["submission_type"] = submission_type
 
-    state["messages"].append(f"Classification node: Classified as {state['submission_type']}.")
-    return state
+    updates["messages"].append(f"Classification node: Classified as {submission_type}.")
+    return updates

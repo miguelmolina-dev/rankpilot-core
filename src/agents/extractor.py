@@ -30,7 +30,5 @@ def ingestion_node(state: AgentState) -> dict:
     return {
         "current_step": "ingestion",
         "decoded_file_paths": decoded_file_paths,
-        "messages": messages,
-        "gaps": state.get("gaps", []),
-        "questions": state.get("questions", [])
+        "messages": messages
     }

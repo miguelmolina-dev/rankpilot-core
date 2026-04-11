@@ -1,11 +1,11 @@
 from src.core.state import AgentState
 
-def interrogator_node(state: AgentState) -> AgentState:
+def interrogator_node(state: AgentState) -> dict:
     """
     Interrogator Node:
     Generates dynamic questions for the fields marked as null or missing (gaps).
     """
-    state["current_step"] = "interrogator"
+    updates = {"current_step": "interrogator", "messages": []}
 
     gaps = state.get("gaps", [])
     questions = []
@@ -15,7 +15,7 @@ def interrogator_node(state: AgentState) -> AgentState:
         field = gap.get("field", "unknown")
         questions.append(f"We are missing information for '{field}'. Could you provide details?")
 
-    state["questions"] = questions
-    state["messages"].append(f"Interrogator node: Generated {len(questions)} questions.")
+    updates["questions"] = questions
+    updates["messages"].append(f"Interrogator node: Generated {len(questions)} questions.")
 
-    return state
+    return updates
