@@ -1,23 +1,35 @@
 import os
+import sys
+import argparse
 import base64
 from fastapi.testclient import TestClient
 from main import api
 
 def main():
+    parser = argparse.ArgumentParser(description="RankPilot Stateless Frontend Simulation")
+    parser.add_argument("filepath", help="Path to the PDF file to upload")
+    args = parser.parse_args()
+
+    if not os.path.exists(args.filepath):
+        print(f"Error: File not found at {args.filepath}")
+        sys.exit(1)
+
     print("--- RankPilot Stateless Frontend Simulation (Laravel style) ---")
+
+    # Read the file and base64 encode it
+    with open(args.filepath, "rb") as f:
+        file_content = f.read()
+    b64_string = base64.b64encode(file_content).decode('utf-8')
+    filename = os.path.basename(args.filepath)
 
     # Initialize TestClient
     client = TestClient(api)
 
-    # 1. Create a dummy file as if uploaded by the user
-    dummy_content = b"Dummy PDF content"
-    b64_string = base64.b64encode(dummy_content).decode('utf-8')
-
-    print("\n[Frontend] Uploading initial document...")
+    print(f"\n[Frontend] Uploading initial document: {filename}...")
 
     # Initial state mimicking what Laravel would send to initiate
     current_state = {
-        "base64_documents": [{"filename": "test.pdf", "base64": b64_string}],
+        "base64_documents": [{"filename": filename, "base64": b64_string}],
         "decoded_file_paths": [],
         "submission_type": "Legal500",
         "submission": None,
