@@ -25,6 +25,9 @@ dist/
 # (Opcional: puedes ignorar la carpeta outputs si no quieres subir los reportes generados)
 outputs/
 
+# --- Generados ---
+data/processed/
+
 # --- IDEs ---
 .vscode/
 .idea/
