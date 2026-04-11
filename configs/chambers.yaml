@@ -1,0 +1,5 @@
+name: "Chambers Global"
+required_fields:
+  - "identity"
+  - "matters"
+  - "clients"

@@ -1,0 +1,5 @@
+name: "Legal500 US"
+required_fields:
+  - "identity"
+  - "matters"
+  - "department_info"
