@@ -2,12 +2,12 @@ from src.core.state import AgentState
 from src.strategies.legal500 import Legal500Strategy
 from src.strategies.chambers import ChambersStrategy
 
-def audit_node(state: AgentState) -> AgentState:
+def audit_node(state: AgentState) -> dict:
     """
     Audit Node (Gap Analysis):
     Compares the current JSON against the "Ideal Schema" of the template.
     """
-    state["current_step"] = "audit"
+    updates = {"current_step": "audit", "messages": []}
 
     submission_data = state.get("submission")
     if submission_data:
@@ -26,8 +26,8 @@ def audit_node(state: AgentState) -> AgentState:
         strategy = Legal500Strategy()
 
     gaps = strategy.audit(submission_dict)
-    state["gaps"] = gaps
+    updates["gaps"] = gaps
 
-    state["messages"].append(f"Audit node: Found {len(gaps)} gaps.")
+    updates["messages"].append(f"Audit node: Found {len(gaps)} gaps.")
 
-    return state
+    return updates

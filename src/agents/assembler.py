@@ -2,12 +2,12 @@ from src.core.state import AgentState
 from src.strategies.legal500 import Legal500Strategy
 from src.strategies.chambers import ChambersStrategy
 
-def assembly_node(state: AgentState) -> AgentState:
+def assembly_node(state: AgentState) -> dict:
     """
     Assembler Node:
     Takes the complete JSON data and uses python-docx to inject it into the final document.
     """
-    state["current_step"] = "assembly"
+    updates = {"current_step": "assembly", "messages": []}
 
     submission_data = state.get("submission")
     if submission_data:
@@ -25,9 +25,9 @@ def assembly_node(state: AgentState) -> AgentState:
         # fallback
         strategy = Legal500Strategy()
 
-    output_path = f"final_submission_{sub_type}.docx"
+    output_path = "data/processed"
     final_doc_path = strategy.assemble(submission_dict, output_path)
 
-    state["messages"].append(f"Assembly node: Document assembled at {final_doc_path}.")
+    updates["messages"].append(f"Assembly node: Document assembled at {final_doc_path}.")
 
-    return state
+    return updates
