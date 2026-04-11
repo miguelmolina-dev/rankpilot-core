@@ -26,7 +26,7 @@ def route_after_interrogator(state: AgentState) -> Literal["audit_node"]:
     # In a real app, we wait for user input. Here we just loop back to audit
     return "audit_node"
 
-def build_workflow() -> StateGraph:
+def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
     """
     Builds the LangGraph state machine.
     """
@@ -64,4 +64,4 @@ def build_workflow() -> StateGraph:
     # End after assembly
     workflow.add_edge("assembly_node", END)
 
-    return workflow.compile()
+    return workflow.compile(checkpointer=checkpointer, interrupt_before=interrupt_before)
