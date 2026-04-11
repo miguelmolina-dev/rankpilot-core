@@ -111,7 +111,15 @@ class Matter(BaseModel):
     is_publishable: bool = False
 
 
-class Legal500Submission(BaseModel):
+class BaseSubmission(BaseModel):
+    """
+    Base submission class.
+    Different ranking templates (Legal500, Chambers) will extend this
+    or be structurally compatible with the overarching strategy pattern.
+    """
+    pass
+
+class Legal500Submission(BaseSubmission):
     identity: Optional[Identity] = None
     department_info: Optional[DepartmentInfo] = None
     narratives: Optional[Narratives] = None
