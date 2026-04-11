@@ -1,12 +1,32 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List, Dict, Optional
-from src.core.workflow import build_workflow
-from src.core.state import AgentState
+with open("main.py", "r") as f:
+    content = f.read()
 
-api = FastAPI(title="RankPilot API")
+content = content.replace(
+"""class ProcessRequest(BaseModel):
+    base64_documents: List[Dict[str, str]]
+    submission_type: Optional[str] = "Legal500"
 
-from src.core.schemas import BaseSubmission
+@api.get("/")
+def read_root():
+    return {"message": "Welcome to RankPilot API"}
+
+@api.post("/process")
+def process_documents(request: ProcessRequest):
+    workflow = build_workflow()
+
+    initial_state: AgentState = {
+        "base64_documents": request.base64_documents,
+        "decoded_file_paths": [],
+        "submission_type": request.submission_type,
+        "submission": None,
+        "gaps": [],
+        "questions": [],
+        "output_base64": None,
+        "messages": [],
+        "current_step": "init",
+        "errors": []
+    }""",
+"""from src.core.schemas import BaseSubmission
 from typing import Any
 
 class ProcessRequest(BaseModel):
@@ -51,9 +71,19 @@ def process_documents(request: ProcessRequest):
         "messages": request.messages,
         "current_step": request.current_step,
         "errors": request.errors
-    }
+    }""")
 
-    result = workflow.invoke(initial_state)
+content = content.replace(
+"""    result = workflow.invoke(initial_state)
+
+    return {
+        "output_base64": result.get("output_base64"),
+        "messages": result.get("messages"),
+        "current_step": result.get("current_step"),
+        "gaps": result.get("gaps"),
+        "questions": result.get("questions")
+    }""",
+"""    result = workflow.invoke(initial_state)
 
     sub = result.get("submission")
     sub_dict = sub.model_dump() if sub else None
@@ -71,8 +101,7 @@ def process_documents(request: ProcessRequest):
         "messages": result.get("messages", []),
         "current_step": result.get("current_step", ""),
         "errors": result.get("errors", [])
-    }
+    }""")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(api, host="0.0.0.0", port=8000)
+with open("main.py", "w") as f:
+    f.write(content)

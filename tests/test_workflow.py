@@ -34,7 +34,7 @@ class TestWorkflow(unittest.TestCase):
 
         # We expect gaps for an empty submission, so interrogator should run
         self.assertTrue(len(result["gaps"]) > 0)
-        self.assertTrue(len(result["questions"]) > 0)
+        self.assertTrue(result["new_answer"]["question_text"] != "")
 
-        # Finally it should reach assembly
-        self.assertEqual(result["current_step"], "assembly")
+        # Workflow now stops at interrogator to wait for Laravel
+        self.assertEqual(result["current_step"], "interrogator")

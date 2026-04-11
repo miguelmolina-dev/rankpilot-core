@@ -25,6 +25,12 @@ class AgentState(TypedDict):
     # Dynamic questions generated to cover gaps
     questions: List[str]
 
+    # History of Q&A interactions with Laravel
+    history: List[str]
+
+    # Current question and incoming answer from Laravel
+    new_answer: Dict[str, str]
+
     # Base64 output representation of the final document
     output_base64: Optional[str]
 
