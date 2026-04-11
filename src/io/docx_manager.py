@@ -1,6 +1,30 @@
 import os
 import docx
 
+def extract_text_from_docx(filepath: str) -> str:
+    """
+    Extracts all text from a given docx file.
+
+    Args:
+        filepath (str): The path to the docx file.
+
+    Returns:
+        str: The extracted text, or None if the file cannot be read.
+    """
+    if not os.path.exists(filepath):
+        print(f"Error: docx file not found at {filepath}")
+        return None
+
+    try:
+        doc = docx.Document(filepath)
+        full_text = []
+        for para in doc.paragraphs:
+            full_text.append(para.text)
+        return '\n'.join(full_text)
+    except Exception as e:
+        print(f"Error extracting text from docx {filepath}: {str(e)}")
+        return None
+
 def assemble_submission(template_path: str, output_dir: str, submission_data: dict) -> str:
     """
     Reads the given template docx, injects JSON results from submission_data,
