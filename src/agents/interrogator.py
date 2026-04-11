@@ -4,9 +4,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
 
-class StrategicQuestions(BaseModel):
-    questions: List[str] = Field(
-        description="A list of strategic questions asking for the missing information."
+class StrategicQuestion(BaseModel):
+    question: str = Field(
+        description="A strategic question asking for the specific missing information."
     )
 
 def interrogator_node(state: AgentState) -> dict:
@@ -18,31 +18,29 @@ def interrogator_node(state: AgentState) -> dict:
     updates = {"current_step": "interrogator", "messages": []}
 
     gaps = state.get("gaps", [])
-    questions = []
+    question = ""
 
     if gaps:
         try:
             llm = get_llm(temperature=0.2)
-            structured_llm = llm.with_structured_output(StrategicQuestions)
+            structured_llm = llm.with_structured_output(StrategicQuestion)
 
             system_prompt = (
                 "You are an expert legal ranking strategist advising a law firm. "
                 "The firm is preparing a submission for legal directories (like Chambers or Legal500), "
-                "but some required fields are missing. "
-                "Generate a set of clear, professional, and strategic questions to ask the attorneys "
+                "but a specific required field is missing. "
+                "Generate a single clear, professional, and strategic question to ask the attorneys "
                 "to easily obtain the missing information. "
                 "Address the attorneys directly."
             )
 
-            gaps_text = "\n".join([
-                f"- Field: {gap.get('field', 'unknown')}. Reason: {gap.get('reason', 'Missing information.')}"
-                for gap in gaps
-            ])
+            first_gap = gaps[0]
+            field = first_gap.get('field', 'unknown')
+            reason = first_gap.get('reason', 'Missing information.')
 
             user_prompt = (
-                "Here are the missing fields and the reasons they are flagged as missing:\n"
-                f"{gaps_text}\n\n"
-                "Please generate the strategic questions to ask for this missing information."
+                f"We are missing information for the field '{field}' because: {reason}.\n\n"
+                "Please generate one strategic question to ask for this missing information."
             )
 
             prompt = ChatPromptTemplate.from_messages([
@@ -53,16 +51,19 @@ def interrogator_node(state: AgentState) -> dict:
             chain = prompt | structured_llm
             result = chain.invoke({})
 
-            questions = result.questions
+            question = result.question
 
         except Exception as e:
             # Fallback to simple logic if LLM fails (e.g., no API key in tests)
             updates["messages"].append(f"LLM generation failed: {e}. Falling back to simple questions.")
-            for gap in gaps:
-                field = gap.get("field", "unknown")
-                questions.append(f"We are missing information for '{field}'. Could you provide details?")
+            first_gap = gaps[0]
+            field = first_gap.get("field", "unknown")
+            question = f"We are missing information for '{field}'. Could you provide details?"
 
-    updates["questions"] = questions
-    updates["messages"].append(f"Interrogator node: Generated {len(questions)} questions.")
+    updates["new_answer"] = {
+        "question_text": question,
+        "answer": ""
+    }
+    updates["messages"].append("Interrogator node: Generated 1 question and paused for Laravel.")
 
     return updates
