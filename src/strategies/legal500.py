@@ -1,6 +1,7 @@
 import yaml
 from typing import Dict, Any, List
 from src.strategies.base import SubmissionStrategy
+from src.io.docx_manager import assemble_submission
 
 class Legal500Strategy(SubmissionStrategy):
     """
@@ -37,6 +38,5 @@ class Legal500Strategy(SubmissionStrategy):
         """
         Uses python-docx to assemble the Legal500 docx.
         """
-        # In a real scenario, this would use `src.io.docx_manager` to write
-        # Here we just mock the result
-        return output_path
+        template_path = "templates/legal500-us-submissions-template-2026-1-1-2.docx"
+        return assemble_submission(template_path, output_path, submission_data)
