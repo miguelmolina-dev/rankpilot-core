@@ -56,11 +56,12 @@ def update_node(state: AgentState) -> dict:
                 "Maintain all previously filled data. Ensure your output perfectly matches the requested schema."
             )
 
+            # Use formatting safely since ChatPromptTemplate expects variables if not escaped
             user_prompt = (
                 f"Current Submission Data:\n{current_submission_dict}\n\n"
                 f"Newly Answered Question:\nQuestion: {question_text}\nAnswer: {answer_text}\n\n"
                 "Please provide the updated full submission object with the new information incorporated."
-            )
+            ).replace("{", "{{").replace("}", "}}")
 
             prompt = ChatPromptTemplate.from_messages([
                 ("system", system_prompt),
