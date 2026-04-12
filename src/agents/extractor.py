@@ -67,21 +67,44 @@ def ingestion_node(state: AgentState) -> dict:
 
             structured_llm = llm.with_structured_output(schema_class)
 
+            # --- Advanced Prompt Engineering for Nested Schema Extraction ---
+            system_prompt = (
+                "You are an elite legal data extraction agent. Your objective is to extract "
+                "highly nested information for legal directories (like Legal500 or Chambers) "
+                "from raw document text and map it accurately to a strict data schema.\n\n"
+                "CRITICAL INSTRUCTIONS:\n"
+                "1. ZERO HALLUCINATION: Only extract facts explicitly stated in the text. "
+                "If information for a specific field is missing, you MUST leave it as null, 0, or an empty list.\n"
+                "2. DEEP EXTRACTION: Pay special attention to capturing all items in nested arrays "
+                "(e.g., Matters, Clients, Individual Nominations, Interview Contacts). Do not skip or summarize items if full details exist.\n"
+                "3. DATA INTEGRITY: Preserve the original names, deal values, jurisdictions, and exact descriptions."
+            )
+
+            user_prompt = (
+                "Target Submission Type: {sub_type}\n\n"
+                "Here is the raw text extracted from the uploaded document(s):\n"
+                "=========================================\n"
+                "{text}\n"
+                "=========================================\n\n"
+                "Carefully populate the schema using ONLY the information provided above. "
+                "Do not invent any missing information."
+            )
+
             prompt = ChatPromptTemplate.from_messages([
-                ("system", "You are an expert AI assistant that extracts information from raw text and maps it accurately into the provided schema for legal submissions. You extract data precisely without hallucinating."),
-                ("user", "Extract the relevant information from the following text and populate the structured schema.\n\nText:\n{text}")
+                ("system", system_prompt),
+                ("user", user_prompt)
             ])
 
             chain = prompt | structured_llm
-            extracted_data = chain.invoke({"text": extracted_text})
+            extracted_data = chain.invoke({
+                "text": extracted_text, 
+                "sub_type": sub_type
+            })
 
             # Update submission in state
             updates["submission"] = extracted_data
-            updates["messages"].append("Ingestion node: Data mapped successfully.")
+            updates["messages"].append("Ingestion node: Data extracted and mapped to schema successfully.")
 
         except Exception as e:
             updates["messages"].append(f"Ingestion node: AI extraction failed: {str(e)}")
-    else:
-        updates["messages"].append("Ingestion node: No text extracted to map.")
-
-    return updates
+            updates["errors"] = state.get("errors", []) + [str(e)]
