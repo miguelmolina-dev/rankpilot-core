@@ -54,7 +54,7 @@ def main():
         print(f"   [Log]: {msg}")
 
     # Enter the interactive loop
-    max_iterations = 10
+    max_iterations = 4
     iteration = 0
     while current_state.get("gaps") and iteration < max_iterations:
         iteration += 1
