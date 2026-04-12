@@ -9,10 +9,10 @@ def test_assemble():
     # To fix the TR error in test we need a real table, so docxtpl recognizes it as a table row loop
     d.add_paragraph("Firm: {{ identity.firm_name }}")
     table = d.add_table(rows=2, cols=2)
-    # The {% tr %} tag must only be used inside tables!
-    table.rows[0].cells[0].text = "{% tr for c in publishable_clients %}"
+    # The {% for %} tag must only be used inside tables if not using {% tr %}
+    table.rows[0].cells[0].text = "{% for c in publishable_clients %}"
     table.rows[0].cells[1].text = "{{ c.active_key_client }}"
-    table.rows[1].cells[0].text = "{% tr endfor %}"
+    table.rows[1].cells[0].text = "{% endfor %}"
 
     d.save(dummy_template_path)
 
