@@ -12,9 +12,9 @@ def test_assemble():
     d = Document()
     d.add_paragraph("Firm: {{ identity.firm_name }}")
     d.add_paragraph("Has Publishable Clients:")
-    d.add_paragraph("{% tr for c in publishable_clients %}")
+    d.add_paragraph("{% for c in publishable_clients %}")
     d.add_paragraph("Client: {{ c.active_key_client }} - New: {{ c.is_new_client }}")
-    d.add_paragraph("{% tr endfor %}")
+    d.add_paragraph("{% endfor %}")
     d.save(dummy_template_path)
 
     submission_data = {

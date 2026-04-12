@@ -1,6 +1,14 @@
 import os
 import docx
+import jinja2
 from docxtpl import DocxTemplate
+
+class SilentUndefined(jinja2.Undefined):
+    def _fail_with_undefined_error(self, *args, **kwargs):
+        return ''
+    __str__ = __unicode__ = _fail_with_undefined_error
+    def __getattr__(self, name):
+        return self.__class__(name=name)
 
 def extract_text_from_docx(filepath: str) -> str:
     """
@@ -85,7 +93,9 @@ def assemble_submission(template_path: str, output_dir: str, submission_data: di
     doc = DocxTemplate(template_path)
 
     # 4. Render the template
-    doc.render(context)
+    # Use a custom Jinja environment with SilentUndefined to handle out-of-bounds indices
+    jinja_env = jinja2.Environment(undefined=SilentUndefined)
+    doc.render(context, jinja_env=jinja_env)
 
     # Determine the output filename based on the template name
     template_filename = os.path.basename(template_path)
