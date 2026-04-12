@@ -84,8 +84,24 @@ def assemble_submission(template_path: str, output_dir: str, submission_data: di
     # 3. Load the template with docxtpl
     doc = DocxTemplate(template_path)
 
+    # Configure Jinja environment to fail silently on undefined indices/attributes
+    import jinja2
+    class SilentUndefined(jinja2.Undefined):
+        def __str__(self):
+            return ""
+        def __getattr__(self, name):
+            return SilentUndefined()
+        def __getitem__(self, key):
+            return SilentUndefined()
+        def __iter__(self):
+            return iter([])
+
+    jinja_env = jinja2.Environment(undefined=SilentUndefined)
+    doc.render(context, jinja_env=jinja_env)
+
+
     # 4. Render the template
-    doc.render(context)
+    # (Rendering is now done above with custom jinja_env)
 
     # Determine the output filename based on the template name
     template_filename = os.path.basename(template_path)
