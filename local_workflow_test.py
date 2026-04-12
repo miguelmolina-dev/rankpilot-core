@@ -2,6 +2,9 @@ import os
 import base64
 from src.core.workflow import build_workflow
 from src.core.state import AgentState
+from os import getenv
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 
 def main():
     print("--- RankPilot Local Workflow Test ---")
@@ -10,14 +13,22 @@ def main():
     workflow = build_workflow()
 
     # 1. Create a dummy file as if uploaded by the user
-    dummy_content = b"Dummy PDF content"
-    b64_string = base64.b64encode(dummy_content).decode('utf-8')
+    file_path = r"G:\Proyectos_Python\rankpilot-core\tests\FINAL_Chambers 2026_Mexico_Perez Correa_Fintech_Submission (1)(2).pdf"
+    
+    # 2. Read the ACTUAL PDF file so the PDF parser doesn't crash on dummy data
+    try:
+        with open(file_path, "rb") as pdf_file:
+            real_pdf_content = pdf_file.read()
+        b64_string = base64.b64encode(real_pdf_content).decode('utf-8')
+    except FileNotFoundError:
+        print(f"Error: Could not find the test PDF at {file_path}")
+        return
 
     print("\n[Local] Initializing state...")
 
     # Initial state mimicking what would be sent to initiate
     current_state: AgentState = {
-        "base64_documents": [{"filename": "test.pdf", "base64": b64_string}],
+        "base64_documents": [{"filename": file_path, "base64": b64_string}],
         "decoded_file_paths": [],
         "submission_type": "Legal500",
         "submission": None,

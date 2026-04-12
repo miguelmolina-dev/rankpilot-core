@@ -1,5 +1,7 @@
 import os
 from langchain_openai import ChatOpenAI
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 
 def get_llm(temperature: float = 0.2):
     """
