@@ -1,6 +1,6 @@
 import os
 import docx
-from src.io.docx_manager import assemble_submission
+from src.io.docx_manager import assemble_submission, extract_text_from_docx
 
 def test_template():
     submission_data = {
@@ -125,6 +125,11 @@ def test_template():
     assert non_publishable_matters == 1, f"Expected 1 non-publishable matter table, found {non_publishable_matters}"
 
     print("All matter tables correctly duplicated and rendered!")
+
+    print("\n--- Final Document Content ---")
+    extracted_text = extract_text_from_docx(out_path)
+    print(extracted_text)
+    print("------------------------------")
 
 if __name__ == '__main__':
     test_template()
