@@ -12,9 +12,16 @@ class SilentUndefined(jinja2.Undefined):
     def __getitem__(self, key):
         return self.__class__(name=key)
 
+def _clean_table_text(text: str) -> str:
+    """Helper to clean text for markdown tables"""
+    if not text:
+        return ""
+    # Replace newlines and pipes with spaces to not break markdown tables
+    return str(text).replace("\n", " ").replace("|", " ").strip()
+
 def extract_text_from_docx(filepath: str) -> str:
     """
-    Extracts all text from a given docx file.
+    Extracts all text from a given docx file, including tables rendered as markdown.
 
     Args:
         filepath (str): The path to the docx file.
@@ -29,8 +36,25 @@ def extract_text_from_docx(filepath: str) -> str:
     try:
         doc = docx.Document(filepath)
         full_text = []
+
+        # 1. Extract paragraphs
         for para in doc.paragraphs:
-            full_text.append(para.text)
+            if para.text.strip():
+                full_text.append(para.text)
+
+        # 2. Extract tables as Markdown
+        if doc.tables:
+            full_text.append("\n--- Tables from DOCX ---")
+            for table in doc.tables:
+                for i, row in enumerate(table.rows):
+                    row_data = [_clean_table_text(cell.text) for cell in row.cells]
+                    full_text.append("| " + " | ".join(row_data) + " |")
+
+                    if i == 0: # header separator
+                        header_sep = ["---"] * len(row.cells)
+                        full_text.append("| " + " | ".join(header_sep) + " |")
+                full_text.append("") # Add spacing between tables
+
         return '\n'.join(full_text)
     except Exception as e:
         print(f"Error extracting text from docx {filepath}: {str(e)}")
