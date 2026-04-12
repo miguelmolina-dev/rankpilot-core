@@ -9,6 +9,8 @@ class SilentUndefined(jinja2.Undefined):
     __str__ = __unicode__ = _fail_with_undefined_error
     def __getattr__(self, name):
         return self.__class__(name=name)
+    def __getitem__(self, key):
+        return self.__class__(name=key)
 
 def extract_text_from_docx(filepath: str) -> str:
     """

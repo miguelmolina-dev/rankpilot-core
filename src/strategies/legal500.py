@@ -38,5 +38,29 @@ class Legal500Strategy(SubmissionStrategy):
         """
         Uses python-docx to assemble the Legal500 docx.
         """
+        context = submission_data.copy()
+
+        if "identity" in context and context["identity"]:
+            context["Identity"] = context["identity"]
+            contacts = context["identity"].get("interview_contacts", [])
+            if contacts:
+                context["InterviewContact"] = contacts[0]
+
+        if "department_info" in context and context["department_info"]:
+            context["DepartmentInfo"] = context["department_info"]
+            heads = context["department_info"].get("heads_of_team", [])
+            if heads:
+                context["HeadOfTeam"] = heads[0]
+            context["Metrics"] = context["department_info"].get("metrics", {})
+
+        if "narratives" in context and context["narratives"]:
+            context["Narratives"] = context["narratives"]
+
+        if "team_dynamics" in context and context["team_dynamics"]:
+            context["ArrivalDeparture"] = context["team_dynamics"].get("arrivals_and_departures", [])
+
+        if "work_highlights_summaries" in context:
+            context["WorkHighlight"] = context["work_highlights_summaries"]
+
         template_path = "templates/legal500-us-submissions-template-2026-1-1-2.docx"
-        return assemble_submission(template_path, output_path, submission_data)
+        return assemble_submission(template_path, output_path, context)
