@@ -103,7 +103,16 @@ def main():
     output_b64 = current_state.get("output_base64")
     if output_b64:
         print("\n--- Final Document Assembled ---")
-        print(f"Base64 Document (truncated): {output_b64[:100]}...{output_b64[-100:]}")
+
+        # Decode base64 and save as docx
+        output_dir = os.path.join("data", "processed")
+        os.makedirs(output_dir, exist_ok=True)
+        output_filepath = os.path.join(output_dir, "final_submission.docx")
+
+        with open(output_filepath, "wb") as f:
+            f.write(base64.b64decode(output_b64))
+
+        print(f"Document successfully saved to: {output_filepath}")
         print("--------------------------------")
     else:
         print("\nNo output base64 found in the final state. Assembly might have failed.")
