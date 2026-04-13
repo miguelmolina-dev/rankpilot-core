@@ -25,12 +25,8 @@ class Legal500Strategy(SubmissionStrategy):
         Runs the Gap Analysis to compare the current JSON state against the
         'Ideal Schema' of Legal500 template.
         """
-        gaps = []
         required_fields = self.config.get("required_fields", [])
-        for field in required_fields:
-            if field not in submission_data or not submission_data[field]:
-                gaps.append({"field": field, "reason": f"Missing required field {field} for Legal500."})
-        return gaps
+        return self._evaluate_nested_fields(submission_data, required_fields, "Legal500")
 
     def assemble(self, submission_data: Dict[str, Any], output_path: str) -> str:
         """

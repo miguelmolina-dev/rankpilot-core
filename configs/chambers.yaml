@@ -1,5 +1,8 @@
 name: "Chambers Global"
 required_fields:
-  - "A_preliminary_information"
-  - "B_department_information"
-  - "D_publishable_information"
+  - "A_preliminary_information.A1_firm_name"
+  - "A_preliminary_information.A2_practice_area"
+  - "A_preliminary_information.A3_location_jurisdiction"
+  - "B_department_information.B1_department_name"
+  - "B_department_information.B10_department_best_known_for"
+  - "D_publishable_information.publishable_matters"

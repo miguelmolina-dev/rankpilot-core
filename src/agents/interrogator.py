@@ -38,9 +38,18 @@ def interrogator_node(state: AgentState) -> dict:
             field = first_gap.get('field', 'unknown')
             reason = first_gap.get('reason', 'Missing information.')
 
+            submission_data = state.get("submission")
+            if submission_data:
+                # We format it safely to avoid prompt template issues
+                current_submission_context = str(submission_data.model_dump(exclude_none=True)).replace("{", "{{").replace("}", "}}")
+            else:
+                current_submission_context = "No information extracted yet."
+
             user_prompt = (
+                f"Current Extracted Information Context:\n{current_submission_context}\n\n"
                 f"We are missing information for the field '{field}' because: {reason}.\n\n"
-                "Please generate one strategic question to ask for this missing information."
+                "Please generate one strategic question to ask for this missing information. "
+                "Use the Current Extracted Information Context to inform your question and avoid asking for information we already know (like the firm name or practice area if it is already present in the context)."
             )
 
             prompt = ChatPromptTemplate.from_messages([

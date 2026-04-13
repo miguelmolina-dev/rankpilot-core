@@ -47,7 +47,7 @@ def update_node(state: AgentState) -> dict:
             else:
                 schema_class = AnchorSubmission
 
-            structured_llm = llm.with_structured_output(schema_class)
+            structured_llm = llm.with_structured_output(schema_class, include_raw=True)
 
             system_prompt = (
                 "You are an expert legal data extraction assistant. "
@@ -77,7 +77,11 @@ def update_node(state: AgentState) -> dict:
             ])
 
             chain = prompt | structured_llm
-            updated_submission = chain.invoke({})
+            output = chain.invoke({})
+
+            updated_submission = output.get("parsed")
+            if not updated_submission:
+                raise ValueError("Structured LLM returned empty data or failed to parse. Details: " + str(output.get("parsing_error")))
 
             updates["submission"] = updated_submission
 
