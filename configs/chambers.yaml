@@ -3,3 +3,10 @@ required_fields:
   - "A_preliminary_information"
   - "B_department_information"
   - "D_publishable_information"
+fields:
+  A_preliminary_information:
+    description: "Firm Name, Country, Practice Area, and Contact details to arrange interviews."
+  B_department_information:
+    description: "Department Name, Diversity, Lawyers Ranked, etc."
+  D_publishable_information:
+    description: "Publishable clients and matters."

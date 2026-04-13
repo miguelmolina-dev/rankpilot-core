@@ -27,9 +27,14 @@ class ChambersStrategy(SubmissionStrategy):
         # A simple placeholder logic using the config
         gaps = []
         required_fields = self.config.get("required_fields", [])
+        fields_config = self.config.get("fields", {})
         for field in required_fields:
             if field not in submission_data or not submission_data[field]:
-                gaps.append({"field": field, "reason": f"Missing required field {field} for Chambers."})
+                field_description = fields_config.get(field, {}).get("description", "")
+                reason = f"Missing required field {field} for Chambers."
+                if field_description:
+                    reason += f" This section requires: {field_description}"
+                gaps.append({"field": field, "reason": reason})
         return gaps
 
     def assemble(self, submission_data: Dict[str, Any], output_path: str) -> str:

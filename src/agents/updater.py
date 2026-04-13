@@ -53,7 +53,10 @@ def update_node(state: AgentState) -> dict:
                 "You are an expert legal data extraction assistant. "
                 "You are given the current state of a legal submission document, along with a newly answered question. "
                 "Update the submission document by filling the missing fields that the answer provides. "
-                "Maintain all previously filled data. Ensure your output perfectly matches the requested schema."
+                "Maintain all previously filled data. "
+                "CRITICAL INSTRUCTIONS:\n"
+                "1. If the user provides a free-text narrative answer, map it to the most relevant field in the schema.\n"
+                "2. Do not drop or erase any data from 'Current Submission Data'. Ensure your output perfectly matches the requested schema and includes the new answer."
             )
 
             # Use formatting safely since ChatPromptTemplate expects variables if not escaped
