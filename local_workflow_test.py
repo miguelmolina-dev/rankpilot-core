@@ -13,7 +13,7 @@ def main():
     workflow = build_workflow()
 
     # 1. Create a dummy file as if uploaded by the user
-    file_path = r"G:\Proyectos_Python\rankpilot-core\tests\FINAL_Chambers 2026_Mexico_Perez Correa_Fintech_Submission (1)(2).pdf"
+    file_path = r"tests/dummy.pdf"
     
     # 2. Read the ACTUAL PDF file so the PDF parser doesn't crash on dummy data
     try:
@@ -30,7 +30,8 @@ def main():
     current_state: AgentState = {
         "base64_documents": [{"filename": file_path, "base64": b64_string}],
         "decoded_file_paths": [],
-        "submission_type": "Legal500",
+        "target_submission_type": "Legal500",
+        "input_document_type": None,
         "submission": None,
         "gaps": [],
         "questions": [],

@@ -31,7 +31,8 @@ def main():
     current_state = {
         "base64_documents": [{"filename": filename, "base64": b64_string}],
         "decoded_file_paths": [],
-        "submission_type": "Legal500",
+        "target_submission_type": "Legal500",
+        "input_document_type": None,
         "submission": None,
         "gaps": [],
         "questions": [],

@@ -1,35 +1,23 @@
 name: "Legal500 US"
 required_fields:
-  - "identity"
-  - "department_info"
-  - "narratives"
-  - "clients"
-  - "individual_nominations"
-  - "team_dynamics"
-  - "work_highlights_summaries"
-  - "matters"
+  - "A_preliminary_information"
+  - "B_department_information"
+  - "C_feedback"
+  - "D_publishable_information"
+  - "E_confidential_information"
 fields:
-  identity:
-    description: "Firm Name, Country, Practice Area, and Contact details to arrange interviews."
-    state_mapping: "submission.identity"
-  department_info:
-    description: "Team or Department Name, Head(s) of Team, and number of partners/non-partners."
-    state_mapping: "submission.department_info"
-  narratives:
-    description: "What sets your practice apart, initiatives and innovation, and rankings/commentary feedback."
-    state_mapping: "submission.narratives"
-  clients:
-    description: "Active key clients over the last 12 months, both publishable and non-publishable."
-    state_mapping: "submission.clients"
-  individual_nominations:
-    description: "Nominations for leading partners, next generation partners, and leading associates."
-    state_mapping: "submission.individual_nominations"
-  team_dynamics:
-    description: "Significant recent arrivals and partner-level departures."
-    state_mapping: "submission.team_dynamics"
-  work_highlights_summaries:
-    description: "Brief publishable summaries of up to three work highlights."
-    state_mapping: "submission.work_highlights_summaries"
-  matters:
-    description: "Up to 20 detailed work highlights that represent the practice over the past 12 months (publishable and non-publishable)."
-    state_mapping: "submission.matters"
+  A_preliminary_information:
+    description: "Firm Name, Country, Practice Area, and Contact details."
+    state_mapping: "submission.A_preliminary_information"
+  B_department_information:
+    description: "Department Name, Diversity, Lawyers Ranked, etc."
+    state_mapping: "submission.B_department_information"
+  C_feedback:
+    description: "Feedback and comments on barristers and other firms."
+    state_mapping: "submission.C_feedback"
+  D_publishable_information:
+    description: "Publishable clients and matters."
+    state_mapping: "submission.D_publishable_information"
+  E_confidential_information:
+    description: "Confidential clients and matters."
+    state_mapping: "submission.E_confidential_information"

@@ -14,7 +14,8 @@ class AgentState(TypedDict):
     decoded_file_paths: List[str]
 
     # Type of submission (e.g. Legal500 US 2026, Chambers Global)
-    submission_type: Optional[str]
+    target_submission_type: Optional[str]
+    input_document_type: Optional[str]
 
     # The main structured data we are extracting and building
     submission: Optional[BaseSubmission]
@@ -37,4 +38,5 @@ class AgentState(TypedDict):
     # Optional fields for tracking process
     messages: Annotated[list, operator.add]
     current_step: str
+    extracted_text: Optional[str]
     errors: List[str]
