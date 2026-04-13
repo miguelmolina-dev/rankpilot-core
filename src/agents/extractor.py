@@ -31,7 +31,7 @@ def ingestion_node(state: AgentState) -> dict:
             else:
                 schema_class = AnchorSubmission
 
-            structured_llm = llm.with_structured_output(schema_class)
+            structured_llm = llm.with_structured_output(schema_class, include_raw=True)
 
             system_prompt = (
                 "You are an elite legal data extraction agent. Your objective is to extract "
@@ -59,10 +59,14 @@ def ingestion_node(state: AgentState) -> dict:
             ])
 
             chain = prompt | structured_llm
-            extracted_data = chain.invoke({
+            output = chain.invoke({
                 "text": extracted_text, 
                 "input_document_type": input_document_type
             })
+
+            extracted_data = output.get("parsed")
+            if not extracted_data:
+                raise ValueError("Structured LLM returned empty data or failed to parse. Details: " + str(output.get("parsing_error")))
 
             # Update submission in state
             updates["submission"] = extracted_data
