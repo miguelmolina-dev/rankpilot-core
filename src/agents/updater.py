@@ -2,7 +2,7 @@ from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import AnchorSubmission
+from src.core.schemas import AnchorSubmission, Legal500Submission
 
 def update_node(state: AgentState) -> dict:
     """
@@ -42,25 +42,33 @@ def update_node(state: AgentState) -> dict:
             llm = get_llm(temperature=0.0)
 
             # Determine the structured output type based on the submission type.
-            # We use our universal AnchorSubmission schema.
-            # We default to AnchorSubmission.
             if target_submission_type == "Legal500":
-                structured_llm = llm.with_structured_output(AnchorSubmission)
+                schema_class = Legal500Submission
             else:
-                structured_llm = llm.with_structured_output(AnchorSubmission)
+                schema_class = AnchorSubmission
+
+            structured_llm = llm.with_structured_output(schema_class)
 
             system_prompt = (
                 "You are an expert legal data extraction assistant. "
                 "You are given the current state of a legal submission document, along with a newly answered question. "
-                "Update the submission document by filling the missing fields that the answer provides. "
-                "Maintain all previously filled data. Ensure your output perfectly matches the requested schema."
+                "Update the submission document by filling the missing fields that the user's answer provides. "
+                "CRITICAL INSTRUCTIONS:\n"
+                "1. VERY IMPORTANT: Users may not understand exactly what field they are answering for. "
+                "   If the user's answer contains information that logically belongs in other fields "
+                "   (e.g., they provide client details when asked about department info), YOU MUST capture that data "
+                "   and map it to the correct, relevant fields in the schema.\n"
+                "2. Maintain all previously filled data from the 'Current Submission Data'. "
+                "3. Use the schema field descriptions to guide your mapping. Be highly resilient to 'dummy' or conversational user input.\n"
+                "4. Ensure your output perfectly matches the requested schema structure."
             )
 
             # Use formatting safely since ChatPromptTemplate expects variables if not escaped
             user_prompt = (
                 f"Current Submission Data:\n{current_submission_dict}\n\n"
-                f"Newly Answered Question:\nQuestion: {question_text}\nAnswer: {answer_text}\n\n"
-                "Please provide the updated full submission object with the new information incorporated."
+                f"Question Asked to User:\n{question_text}\n\n"
+                f"User's Answer:\n{answer_text}\n\n"
+                "Please provide the updated full submission object. Read the user's answer carefully and incorporate ANY relevant information it contains into the appropriate fields in the schema, while preserving all existing data."
             ).replace("{", "{{").replace("}", "}}")
 
             prompt = ChatPromptTemplate.from_messages([
