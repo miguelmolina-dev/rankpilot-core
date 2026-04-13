@@ -12,7 +12,8 @@ from typing import Any
 class ProcessRequest(BaseModel):
     base64_documents: List[Dict[str, str]] = []
     decoded_file_paths: List[str] = []
-    submission_type: Optional[str] = "Legal500"
+    target_submission_type: Optional[str] = "Legal500"
+    input_document_type: Optional[str] = None
     submission: Optional[Dict[str, Any]] = None
     gaps: List[Dict[str, Any]] = []
     questions: List[str] = []
@@ -32,16 +33,17 @@ def process_documents(request: ProcessRequest):
     workflow = build_workflow()
 
     # We load the submission dict into the Pydantic model if it exists
-    from src.core.schemas import Legal500Submission # assuming Legal500 as default implementation
+    from src.core.schemas import AnchorSubmission
 
     sub_model = None
     if request.submission:
-        sub_model = Legal500Submission(**request.submission)
+        sub_model = AnchorSubmission(**request.submission)
 
     initial_state: AgentState = {
         "base64_documents": request.base64_documents,
         "decoded_file_paths": request.decoded_file_paths,
-        "submission_type": request.submission_type,
+        "target_submission_type": request.target_submission_type,
+        "input_document_type": request.input_document_type,
         "submission": sub_model,
         "gaps": request.gaps,
         "questions": request.questions,
@@ -61,7 +63,8 @@ def process_documents(request: ProcessRequest):
     return {
         "base64_documents": result.get("base64_documents", []),
         "decoded_file_paths": result.get("decoded_file_paths", []),
-        "submission_type": result.get("submission_type"),
+        "target_submission_type": result.get("target_submission_type"),
+        "input_document_type": result.get("input_document_type"),
         "submission": sub_dict,
         "gaps": result.get("gaps", []),
         "questions": result.get("questions", []),

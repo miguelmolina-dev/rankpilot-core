@@ -19,7 +19,7 @@ def route_after_audit(state: AgentState) -> Literal["interrogator_node", "assemb
         return "interrogator_node"
     return "assembly_node"
 
-def route_entry(state: AgentState) -> Literal["update_node", "ingestion_node"]:
+def route_entry(state: AgentState) -> Literal["update_node", "classification_node"]:
     """
     If new_answer has an answer, we route to update_node.
     Otherwise, we route to ingestion_node (initial start).
@@ -27,7 +27,7 @@ def route_entry(state: AgentState) -> Literal["update_node", "ingestion_node"]:
     new_answer = state.get("new_answer", {})
     if new_answer.get("answer"):
         return "update_node"
-    return "ingestion_node"
+    return "classification_node"
 
 def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
     """
@@ -48,13 +48,13 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
         route_entry,
         {
             "update_node": "update_node",
-            "ingestion_node": "ingestion_node"
+            "classification_node": "classification_node"
         }
     )
 
     # Define simple linear flow for early steps
-    workflow.add_edge("ingestion_node", "classification_node")
-    workflow.add_edge("classification_node", "audit_node")
+    workflow.add_edge("classification_node", "ingestion_node")
+    workflow.add_edge("ingestion_node", "audit_node")
     workflow.add_edge("update_node", "audit_node")
 
     # Define conditional routing

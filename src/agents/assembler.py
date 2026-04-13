@@ -16,7 +16,7 @@ def assembly_node(state: AgentState) -> dict:
     else:
         submission_dict = {}
 
-    sub_type = state.get("submission_type", "Legal500")
+    sub_type = state.get("target_submission_type", "Legal500")
 
     if sub_type == "Legal500":
         strategy = Legal500Strategy()

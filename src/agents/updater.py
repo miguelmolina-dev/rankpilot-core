@@ -2,7 +2,7 @@ from typing import Dict, Any
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import Legal500Submission, BaseSubmission
+from src.core.schemas import AnchorSubmission
 
 def update_node(state: AgentState) -> dict:
     """
@@ -31,7 +31,7 @@ def update_node(state: AgentState) -> dict:
         # Now, update the submission based on the new answer.
         # We'll use LLM to map the answer into the submission schema.
         submission_data = state.get("submission")
-        submission_type = state.get("submission_type", "Legal500")
+        target_submission_type = state.get("target_submission_type", "Legal500")
 
         if submission_data:
             current_submission_dict = submission_data.model_dump()
@@ -42,12 +42,12 @@ def update_node(state: AgentState) -> dict:
             llm = get_llm(temperature=0.0)
 
             # Determine the structured output type based on the submission type.
-            # Currently only Legal500Submission is fully defined in schemas for usage here.
-            # We will default to Legal500Submission if not recognized or mapped.
-            if submission_type == "Legal500":
-                structured_llm = llm.with_structured_output(Legal500Submission)
+            # We use our universal AnchorSubmission schema.
+            # We default to AnchorSubmission.
+            if target_submission_type == "Legal500":
+                structured_llm = llm.with_structured_output(AnchorSubmission)
             else:
-                structured_llm = llm.with_structured_output(Legal500Submission)
+                structured_llm = llm.with_structured_output(AnchorSubmission)
 
             system_prompt = (
                 "You are an expert legal data extraction assistant. "
