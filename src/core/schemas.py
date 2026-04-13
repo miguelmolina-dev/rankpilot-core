@@ -214,9 +214,241 @@ class ConfidentialInformationFeature(BaseModel):
     E0_confidential_clients_list: List[PublishableClient] = Field(default_factory=list)
     confidential_matters: List[ConfidentialMatter] = Field(default_factory=list)
 
+# --- IFLR1000 and ITR World Tax ---
+class DocumentMetadata(BaseModel):
+    submission_type: Optional[str] = None
+    research_period: Optional[str] = None
+    research_period_tax: Optional[str] = None
+    research_period_awards: Optional[str] = None
+
+class FirmDetails(BaseModel):
+    firm_name: Optional[str] = None
+    jurisdiction: Optional[str] = None
+    us_state: Optional[str] = None
+    practice_area: Optional[str] = None
+    primary_practice_area: Optional[str] = None
+    primary_contact: Optional[ContactPerson] = None
+    research_contact: Optional[ContactPerson] = None
+    additional_contacts: List[ContactPerson] = Field(default_factory=list)
+
+class IFLRLawyerMarketLeader(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    position: Optional[str] = None
+    already_rated_iflr1000: Optional[bool] = None
+    primary_practice_areas: Optional[str] = None
+    industry_sectors: Optional[str] = None
+    rating_nominated_for: Optional[str] = None
+    reasoning_and_deal_numbers: Optional[str] = None
+    email_confidential: Optional[str] = None
+
+class IFLRLawyerRisingStar(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    email_confidential: Optional[str] = None
+    already_rated: Optional[bool] = None
+    rating_nominated_for: Optional[str] = None
+    position: Optional[str] = None
+    year_of_qualification: Optional[int] = None
+    year_promoted_to_partner: Optional[int] = None
+    primary_practice_area: Optional[str] = None
+    most_important_legal_matter: Optional[str] = None
+    date_completed: Optional[str] = None
+    role_and_impact: Optional[str] = None
+
+class IFLRLawyerExpertConsultant(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    email_confidential: Optional[str] = None
+    position: Optional[str] = None
+    primary_practice_area: Optional[str] = None
+    brief_reason_for_nomination: Optional[str] = None
+
+class IFLRSection1Lawyers(BaseModel):
+    market_leader_highly_regarded_women_leader: List[IFLRLawyerMarketLeader] = Field(default_factory=list)
+    rising_star_nominees: List[IFLRLawyerRisingStar] = Field(default_factory=list)
+    expert_consultants: List[IFLRLawyerExpertConsultant] = Field(default_factory=list)
+
+class IFLRHire(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    position_role: Optional[str] = None
+    practice_area: Optional[str] = None
+    hired_from: Optional[str] = None
+    date: Optional[str] = None
+
+class IFLRDeparture(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    position_role: Optional[str] = None
+    practice_area: Optional[str] = None
+    departed_to: Optional[str] = None
+    date: Optional[str] = None
+
+class IFLRReferralWork(BaseModel):
+    first_name: Optional[str] = None
+    surname: Optional[str] = None
+    role_in_relation_to_referrals: Optional[str] = None
+    email_confidential: Optional[str] = None
+
+class IFLRDiversityEquityInclusion(BaseModel):
+    key_contact: Optional[str] = None
+    email_confidential: Optional[str] = None
+    diversity_statistics: Optional[str] = None
+    description: Optional[str] = None
+
+class IFLRAwardsNetZero(BaseModel):
+    key_contact: Optional[str] = None
+    email_confidential: Optional[str] = None
+    description: Optional[str] = None
+    why_impactful_innovative: Optional[str] = None
+
+class IFLRAwardsInnovation(BaseModel):
+    key_contact: Optional[str] = None
+    email_confidential: Optional[str] = None
+    is_internal_or_client_facing: Optional[str] = None
+    description: Optional[str] = None
+    key_achievements: Optional[str] = None
+
+class IFLRKeyPublishableClient(BaseModel):
+    client_name: Optional[str] = None
+    relationship_partner: Optional[str] = None
+
+class IFLRSection2PracticeOverview(BaseModel):
+    practice_overview_text: Optional[str] = None
+    hires: List[IFLRHire] = Field(default_factory=list)
+    departures_and_retirements: List[IFLRDeparture] = Field(default_factory=list)
+    referral_work: List[IFLRReferralWork] = Field(default_factory=list)
+    diversity_equity_and_inclusion: Optional[IFLRDiversityEquityInclusion] = None
+    iflr_awards_net_zero: Optional[IFLRAwardsNetZero] = None
+    iflr_awards_tech_innovation: Optional[IFLRAwardsInnovation] = None
+    iflr_awards_pro_bono: Optional[IFLRAwardsInnovation] = None
+    key_publishable_clients: List[IFLRKeyPublishableClient] = Field(default_factory=list)
+    feedback: Optional[str] = None
+
+class IFLRDeal(BaseModel):
+    deal_number: Optional[int] = None
+    is_confidential: Optional[bool] = None
+    deal_name: Optional[str] = None
+    is_iflr_award_candidate: Optional[bool] = None
+    clients_advised: Optional[str] = None
+    clients_role: Optional[str] = None
+    date_closed_or_milestones: Optional[str] = None
+    value_usd: Optional[float] = None
+    is_cross_border: Optional[bool] = None
+    jurisdictions_involved: Optional[str] = None
+    lead_or_local_counsel: Optional[str] = None
+    lead_partners: Optional[str] = None
+    senior_associates_key_roles: Optional[str] = None
+    other_law_firms_your_side: Optional[str] = None
+    other_law_firms_opposite_side: Optional[str] = None
+    brief_description: Optional[str] = None
+    why_legally_innovative_challenging: Optional[str] = None
+
+class IFLRDealDidNotAdviseOn(BaseModel):
+    deal_description: Optional[str] = None
+
+class IFLRSection3DealHighlights(BaseModel):
+    deals: List[IFLRDeal] = Field(default_factory=list)
+    deal_firm_did_not_advise_on: Optional[IFLRDealDidNotAdviseOn] = None
+
+class ITRRecruitment(BaseModel):
+    name: Optional[str] = None
+    job_title: Optional[str] = None
+    recruitment_specialisms: Optional[str] = None
+    hired_from: Optional[str] = None
+    date_hired: Optional[str] = None
+
+class ITRDeparture(BaseModel):
+    name: Optional[str] = None
+    job_title: Optional[str] = None
+    specialisms: Optional[str] = None
+    departed_to: Optional[str] = None
+    date_departed: Optional[str] = None
+
+class ITRTalentMovements(BaseModel):
+    recruitment: List[ITRRecruitment] = Field(default_factory=list)
+    departures: List[ITRDeparture] = Field(default_factory=list)
+
+class ITRKeyPractitioner(BaseModel):
+    name: Optional[str] = None
+    job_title: Optional[str] = None
+    specialisms: Optional[str] = None
+    email: Optional[str] = None
+
+class ITRRisingStar(BaseModel):
+    name: Optional[str] = None
+    job_title: Optional[str] = None
+    specialisms: Optional[str] = None
+    email: Optional[str] = None
+    qualifying_year: Optional[int] = None
+
+class ITRPractitionerProfiles(BaseModel):
+    key_practitioners: List[ITRKeyPractitioner] = Field(default_factory=list)
+    rising_stars: List[ITRRisingStar] = Field(default_factory=list)
+
+class ITRCorporateSocialResponsibility(BaseModel):
+    esg_programmes: Optional[str] = None
+    dei_programmes: Optional[str] = None
+
+class ITRGlobalExecutiveMobility(BaseModel):
+    global_executive_mobility: Optional[str] = None
+    corporate_incentives: Optional[str] = None
+
+class ITRTechnologySolutions(BaseModel):
+    tax_technology_solutions: Optional[str] = None
+    transfer_pricing_technology_solutions: Optional[str] = None
+
+class ITRTaxPolicyAndProBono(BaseModel):
+    tax_policy_advising: Optional[str] = None
+    pro_bono_work: Optional[str] = None
+
+class ITRNarrativeOverviews(BaseModel):
+    general_practice_overview: Optional[str] = None
+    corporate_social_responsibility: Optional[ITRCorporateSocialResponsibility] = None
+    global_executive_mobility_and_incentives: Optional[ITRGlobalExecutiveMobility] = None
+    technology_solutions: Optional[ITRTechnologySolutions] = None
+    tax_policy_and_pro_bono: Optional[ITRTaxPolicyAndProBono] = None
+    compliance_and_reporting: Optional[str] = None
+    innovation: Optional[str] = None
+
+class ITRSection1PracticeDevelopments(BaseModel):
+    talent_movements: Optional[ITRTalentMovements] = None
+    practitioner_profiles: Optional[ITRPractitionerProfiles] = None
+    narrative_overviews: Optional[ITRNarrativeOverviews] = None
+
+class ITRMatter(BaseModel):
+    matter_number: Optional[int] = None
+    matter_name: Optional[str] = None
+    is_confidential: Optional[bool] = None
+    consider_for_impact_award: Optional[bool] = None
+    categories: List[str] = Field(default_factory=list)
+    specialisms: List[str] = Field(default_factory=list)
+    is_cross_border: Optional[bool] = None
+    jurisdictions_involved: Optional[str] = None
+    date_completed_or_updated: Optional[str] = None
+    transaction_value_usd: Optional[float] = None
+    clients_advised: Optional[str] = None
+    lead_practitioners: Optional[str] = None
+    other_practitioners_with_notable_roles: Optional[str] = None
+    firms_role_on_matter: Optional[str] = None
+    other_companies_involved_and_roles: Optional[str] = None
+    description_of_matter: Optional[str] = None
+    why_highlighted: Optional[str] = None
+
+class ITRSection2DealAndCaseHighlights(BaseModel):
+    matters: List[ITRMatter] = Field(default_factory=list)
+
 class AnchorSubmission(BaseSubmission):
     A_preliminary_information: Optional[PreliminaryInformation] = None
     B_department_information: Optional[DepartmentInfoFeature] = None
     C_feedback: Optional[FeedbackFeature] = None
     D_publishable_information: Optional[PublishableInformationFeature] = None
     E_confidential_information: Optional[ConfidentialInformationFeature] = None
+    document_metadata: Optional[DocumentMetadata] = None
+    firm_details: Optional[FirmDetails] = None
+    iflr_section_1_lawyers: Optional[IFLRSection1Lawyers] = None
+    iflr_section_2_practice_overview: Optional[IFLRSection2PracticeOverview] = None
+    iflr_section_3_deal_highlights: Optional[IFLRSection3DealHighlights] = None
+    itr_section_1_practice_developments: Optional[ITRSection1PracticeDevelopments] = None
+    itr_section_2_deal_and_case_highlights: Optional[ITRSection2DealAndCaseHighlights] = None
