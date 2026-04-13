@@ -3,7 +3,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import AnchorSubmission
+from src.core.schemas import AnchorSubmission, Legal500Submission
 
 def ingestion_node(state: AgentState) -> dict:
     """
@@ -19,12 +19,18 @@ def ingestion_node(state: AgentState) -> dict:
     extracted_text = state.get("extracted_text", "")
     input_document_type = state.get("input_document_type", "Unknown")
 
+    target_submission_type = state.get("target_submission_type", "Legal500")
+
     if extracted_text.strip():
         updates["messages"].append("Ingestion node: Mapping extracted text to universal feature space.")
         try:
             llm = get_llm(temperature=0)
 
-            schema_class = AnchorSubmission
+            if target_submission_type == "Legal500":
+                schema_class = Legal500Submission
+            else:
+                schema_class = AnchorSubmission
+
             structured_llm = llm.with_structured_output(schema_class)
 
             system_prompt = (
