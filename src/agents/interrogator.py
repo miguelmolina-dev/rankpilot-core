@@ -17,7 +17,7 @@ def interrogator_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "interrogator", "messages": []}
 
-    gaps = state.get("gaps", [])
+    gaps = getattr(state, "gaps", [])
     question = ""
 
     if gaps:
@@ -38,7 +38,7 @@ def interrogator_node(state: AgentState) -> dict:
             field = first_gap.get('field', 'unknown')
             reason = first_gap.get('reason', 'Missing information.')
 
-            submission_data = state.get("submission")
+            submission_data = getattr(state, "submission", None)
             if submission_data:
                 # We format it safely to avoid prompt template issues
                 current_submission_context = str(submission_data.model_dump(exclude_none=True)).replace("{", "{{").replace("}", "}}")

@@ -16,10 +16,10 @@ def ingestion_node(state: AgentState) -> dict:
         "messages": messages
     }
 
-    extracted_text = state.get("extracted_text", "")
-    input_document_type = state.get("input_document_type", "Unknown")
+    extracted_text = getattr(state, "extracted_text", "") or ""
+    input_document_type = getattr(state, "input_document_type", "Unknown") or "Unknown"
 
-    target_submission_type = state.get("target_submission_type", "Legal500")
+    target_submission_type = getattr(state, "target_submission_type", "Legal500") or "Legal500"
 
     if extracted_text.strip():
         updates["messages"].append("Ingestion node: Mapping extracted text to universal feature space.")
@@ -74,7 +74,7 @@ def ingestion_node(state: AgentState) -> dict:
 
         except Exception as e:
             updates["messages"].append(f"Ingestion node: AI extraction failed: {str(e)}")
-            updates["errors"] = state.get("errors", []) + [str(e)]
+            updates["errors"] = getattr(state, "errors", []) + [str(e)]
 
     else:
         updates["messages"].append("Ingestion node: No text found to extract.")
