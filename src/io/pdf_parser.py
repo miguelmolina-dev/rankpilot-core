@@ -1,5 +1,6 @@
 import fitz  # PyMuPDF
 import os
+import re
 from typing import Optional
 
 def _clean_table_text(text: str) -> str:
@@ -59,3 +60,30 @@ def extract_text_from_pdf(filepath: str) -> Optional[str]:
     except Exception as e:
         print(f"Error extracting text from PDF {filepath}: {str(e)}")
         return None
+
+def get_submission_chunks(text):
+    # Regex patterns to find the start of each major section
+    # We look for the letter followed by a dot at the start of a line
+    patterns = {
+        "ABC": r"(?m)^A\.\s+PRELIMINARY",
+        "D": r"(?m)^D\.\s+PUBLISHABLE",
+        "E": r"(?m)^E\.\s+CONFIDENTIAL"
+    }
+
+    # Identify indices
+    idx_d = re.search(patterns["D"], text)
+    idx_e = re.search(patterns["E"], text)
+
+    chunks = {}
+
+    if idx_d and idx_e:
+        chunks["ABC"] = text[:idx_d.start()]
+        chunks["D"] = text[idx_d.start():idx_e.start()]
+        chunks["E"] = text[idx_e.start():]
+    elif idx_d:
+        chunks["ABC"] = text[:idx_d.start()]
+        chunks["D"] = text[idx_d.start():]
+    else:
+        chunks["ABC"] = text
+
+    return chunks
