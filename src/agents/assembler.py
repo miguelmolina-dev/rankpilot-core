@@ -41,14 +41,17 @@ def assembly_node(state: AgentState) -> dict:
 
     # 1. Extract and sanitize the Firm Name for the file
     raw_firm_name = "Unknown_Firm"
+    raw_practice_area = "Unknown_Practice"
     if "identity" in submission_dict and "firm_name" in submission_dict["identity"]:
         raw_firm_name = submission_dict["identity"]["firm_name"] or "Unknown_Firm"
+        raw_practice_area = submission_dict["identity"].get("practice_area") or "Unknown_Practice"
     
     firm_name = sanitize_filename(raw_firm_name)
+    practice_area = sanitize_filename(raw_practice_area)
     timestamp = int(time.time())
     
     # Define our perfect final file name
-    final_filename = f"{firm_name}_{sub_type}_{timestamp}.docx"
+    final_filename = f"{firm_name}_{sub_type}_{practice_area}_{timestamp}.docx"
 
     # 2. Setup the paths
     base_dir = os.path.join("data", "processed")
