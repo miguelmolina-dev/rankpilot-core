@@ -74,7 +74,7 @@ def ingestion_node(state: AgentState) -> dict:
 
         except Exception as e:
             updates["messages"].append(f"Ingestion node: AI extraction failed: {str(e)}")
-            updates["errors"] = getattr(state, "errors", []) + [str(e)]
+            updates["errors"] = (getattr(state, "errors") or []) + [str(e)]
 
     else:
         updates["messages"].append("Ingestion node: No text found to extract.")

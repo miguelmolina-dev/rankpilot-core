@@ -13,12 +13,12 @@ def update_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "update", "messages": []}
 
-    new_answer_dict = getattr(state, "new_answer", {})
+    new_answer_dict = getattr(state, "new_answer", {}) or {}
     question_text = new_answer_dict.get("question_text", "")
     answer_text = new_answer_dict.get("answer", "")
 
     # Keep existing history if missing
-    history = getattr(state, "history", [])
+    history = getattr(state, "history", []) or []
 
     if answer_text:
         # Append to history
