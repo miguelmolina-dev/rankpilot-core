@@ -1,26 +1,62 @@
-name: "Legal500 US"
+name: "Legal500 US Complete"
+
+# Note: If a firm legitimately does not have "arrivals_and_departures" or "rankings_feedback", 
+# having them in this required list will force the Interrogator to ask about them. 
+# You can remove them from this list if you want them to be strictly optional.
 required_fields:
-  - "A_preliminary_information.A1_firm_name"
-  - "A_preliminary_information.A2_practice_area"
-  - "A_preliminary_information.A3_location_jurisdiction"
-  - "B_department_information.B1_department_name"
-  - "B_department_information.B10_department_best_known_for"
-  - "C_feedback"
-  - "D_publishable_information.publishable_matters"
-  - "E_confidential_information"
+  - "firm_name"
+  - "country"
+  - "practice_area"
+  - "interview_contacts"
+  - "team_name_internal"
+  - "heads_of_team"
+  - "partners_count_50_percent_plus"
+  - "non_partners_count_50_percent_plus"
+  - "what_sets_us_apart"
+  - "initiatives_and_innovation"
+  - "rankings_feedback"
+  - "active_key_client"
+  - "leading_partners"
+  - "next_generation_partners"
+  - "leading_associates"
+  - "arrivals_and_departures"
+  - "work_highlights_summaries"
+  - "matters"
+
 fields:
-  A_preliminary_information:
-    description: "Firm Name, Country, Practice Area, and Contact details."
-    state_mapping: "submission.A_preliminary_information"
-  B_department_information:
-    description: "Department Name, Diversity, Lawyers Ranked, etc."
-    state_mapping: "submission.B_department_information"
-  C_feedback:
-    description: "Feedback and comments on barristers and other firms."
-    state_mapping: "submission.C_feedback"
-  D_publishable_information:
-    description: "Publishable clients and matters."
-    state_mapping: "submission.D_publishable_information"
-  E_confidential_information:
-    description: "Confidential clients and matters."
-    state_mapping: "submission.E_confidential_information"
+  firm_name:
+    description: "The official name of the law firm."
+  country:
+    description: "The country for the submission (e.g., 'United States')."
+  practice_area:
+    description: "The specific practice area selected for this submission."
+  interview_contacts:
+    description: "List of contacts designated to arrange interviews, including names, emails, and phone numbers."
+  team_name_internal:
+    description: "The internal name the firm uses for this department."
+  heads_of_team:
+    description: "List of the Head(s) of the Team and their locations."
+  partners_count_50_percent_plus:
+    description: "Number of partners who spend at least 50% of their time in this department."
+  non_partners_count_50_percent_plus:
+    description: "Number of non-partners who spend at least 50% of their time in this department."
+  what_sets_us_apart:
+    description: "Narrative detailing what sets the practice apart from other firms."
+  initiatives_and_innovation:
+    description: "Narrative detailing measures introduced or maintained over the last year to benefit clients."
+  rankings_feedback:
+    description: "Feedback regarding existing rankings or commentary."
+  active_key_client:
+    description: "The official name of the active key clients, and whether they are publishable."
+  leading_partners:
+    description: "Nominations for genuinely exceptional, pre-eminent partners with supporting information."
+  next_generation_partners:
+    description: "Nominations for junior/new/younger partners making a material difference."
+  leading_associates:
+    description: "Nominations for junior/new/younger associates or counsels making a material difference."
+  arrivals_and_departures:
+    description: "List of significant recent arrivals, departures, or promotions at the partner level."
+  work_highlights_summaries:
+    description: "Up to 3 brief summaries of publishable work highlights."
+  matters:
+    description: "Detailed descriptions of specific work highlights, deal values, and team members involved."

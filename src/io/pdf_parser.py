@@ -1,3 +1,5 @@
+from ntpath import join
+
 import fitz  # PyMuPDF
 import os
 from typing import Optional
@@ -54,6 +56,7 @@ def extract_text_from_pdf(filepath: str) -> Optional[str]:
 
                     text_blocks.append("\n".join(table_md))
                     text_blocks.append("\n") # spacing
+                    print("\n".join(text_blocks))  # Debug: print the extracted table markdown
 
         return "\n".join(text_blocks)
     except Exception as e:

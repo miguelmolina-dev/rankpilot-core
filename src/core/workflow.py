@@ -8,6 +8,7 @@ from src.agents.auditor import audit_node
 from src.agents.interrogator import interrogator_node
 from src.agents.assembler import assembly_node
 from src.agents.updater import update_node
+from src.agents.sanitizer import sanitizer_node
 
 def route_after_audit(state: AgentState) -> Literal["interrogator_node", "assembly_node"]:
     """
@@ -42,6 +43,7 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
     workflow.add_node("interrogator_node", interrogator_node)
     workflow.add_node("assembly_node", assembly_node)
     workflow.add_node("update_node", update_node)
+    workflow.add_node("sanitizer_node", sanitizer_node)
 
     # Set Entry Point conditionally based on state
     workflow.set_conditional_entry_point(
@@ -54,7 +56,8 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
 
     # Define simple linear flow for early steps
     workflow.add_edge("classification_node", "ingestion_node")
-    workflow.add_edge("ingestion_node", "audit_node")
+    workflow.add_edge("ingestion_node", "sanitizer_node")
+    workflow.add_edge("sanitizer_node", "audit_node")
     workflow.add_edge("update_node", "audit_node")
 
     # Define conditional routing

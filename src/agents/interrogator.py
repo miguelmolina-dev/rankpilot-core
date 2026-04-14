@@ -71,8 +71,10 @@ def interrogator_node(state: AgentState) -> dict:
 
     updates["new_answer"] = {
         "question_text": question,
-        "answer": ""
+        "answer": "",
+        "target_field": field  # NEW: Pass the field forward
     }
-    updates["messages"].append("Interrogator node: Generated 1 question and paused for Laravel.")
+    # Better logging to see exactly what gap we are targeting
+    updates["messages"].append(f"Interrogator node: Generated question for gap in field '{field}' and paused for Laravel.")
 
     return updates

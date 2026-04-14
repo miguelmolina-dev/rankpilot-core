@@ -13,15 +13,15 @@ def main():
     workflow = build_workflow()
 
     # 1. Create a dummy file as if uploaded by the user
-    file_path = r"tests/dummy.pdf"
+    file_path = r"G:\Proyectos_Python\rankpilot-core\tests\FINAL_Chambers 2026_Mexico_Perez Correa_Fintech_Submission (1)(2).docx"
     
     # 2. Read the ACTUAL PDF file so the PDF parser doesn't crash on dummy data
     try:
-        with open(file_path, "rb") as pdf_file:
-            real_pdf_content = pdf_file.read()
-        b64_string = base64.b64encode(real_pdf_content).decode('utf-8')
+        with open(file_path, "rb") as docx_file:
+            real_docx_content = docx_file.read()
+        b64_string = base64.b64encode(real_docx_content).decode('utf-8')
     except FileNotFoundError:
-        print(f"Error: Could not find the test PDF at {file_path}")
+        print(f"Error: Could not find the test document at {file_path}")
         return
 
     print("\n[Local] Initializing state...")
@@ -55,7 +55,7 @@ def main():
         print(f"   [Log]: {msg}")
 
     # Enter the interactive loop
-    max_iterations = 4
+    max_iterations = 8
     iteration = 0
     while current_state.get("gaps") and iteration < max_iterations:
         iteration += 1

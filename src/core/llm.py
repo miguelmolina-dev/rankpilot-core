@@ -14,10 +14,11 @@ def get_llm(temperature: float = 0.2):
     if environment == "local":
 
         return ChatOpenAI(
-            model=os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3-8b-instruct:free"),
+            model="google/gemini-2.0-flash-001",
             api_key=os.getenv("OPENROUTER_API_KEY", "your-openrouter-key"),
             base_url="https://openrouter.ai/api/v1",
             temperature=temperature,
+            timeout=300,
             default_headers={
                 "HTTP-Referer": os.getenv("OPENROUTER_REFERER", "http://localhost:8000"),
                 "X-Title": os.getenv("OPENROUTER_TITLE", "RankPilot"),
