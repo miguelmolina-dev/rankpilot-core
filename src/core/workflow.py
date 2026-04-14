@@ -12,8 +12,8 @@ from src.agents.sanitizer import sanitizer_node
 
 def route_after_audit(state: AgentState) -> Literal["interrogator_node", "assembly_node"]:
     """
-    If there are gaps, go to interrogator.
-    If no gaps, go to assembly.
+    If there are gaps, route to the interrogator to ask the user.
+    If no gaps, route to assembly to build the final document.
     """
     gaps = getattr(state, "gaps", []) or []
     if len(gaps) > 0:
@@ -22,17 +22,17 @@ def route_after_audit(state: AgentState) -> Literal["interrogator_node", "assemb
 
 def route_entry(state: AgentState) -> Literal["update_node", "classification_node"]:
     """
-    If new_answer has an answer, we route to update_node.
-    Otherwise, we route to ingestion_node (initial start).
+    If Laravel sends a state containing a user's answer, start at the update_node.
+    Otherwise (first run), start at the classification_node.
     """
     new_answer = getattr(state, "new_answer", {}) or {}
     if new_answer.get("answer"):
         return "update_node"
     return "classification_node"
 
-def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
+def build_workflow() -> StateGraph:
     """
-    Builds the LangGraph state machine.
+    Builds the LangGraph state machine for the FastAPI server.
     """
     workflow = StateGraph(AgentState)
 
@@ -45,7 +45,7 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
     workflow.add_node("update_node", update_node)
     workflow.add_node("sanitizer_node", sanitizer_node)
 
-    # Set Entry Point conditionally based on state
+    # Set Entry Point conditionally based on the JSON payload from Laravel
     workflow.set_conditional_entry_point(
         route_entry,
         {
@@ -54,13 +54,16 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
         }
     )
 
-    # Define simple linear flow for early steps
+    # Define linear flow for data processing
     workflow.add_edge("classification_node", "ingestion_node")
     workflow.add_edge("ingestion_node", "sanitizer_node")
+    
+    # User updates ALSO go through the Sanitizer/Copywriter
+    workflow.add_edge("update_node", "sanitizer_node")
+    
     workflow.add_edge("sanitizer_node", "audit_node")
-    workflow.add_edge("update_node", "audit_node")
 
-    # Define conditional routing
+    # Define conditional routing based on gaps
     workflow.add_conditional_edges(
         "audit_node",
         route_after_audit,
@@ -70,10 +73,12 @@ def build_workflow(checkpointer=None, interrupt_before=None) -> StateGraph:
         }
     )
 
-    # Interrogator routes to END (pauses workflow for Laravel)
+    # BOTH of these nodes route to END. 
+    # This naturally "pauses" the workflow and returns the JSON state to FastAPI!
     workflow.add_edge("interrogator_node", END)
-
-    # End after assembly
     workflow.add_edge("assembly_node", END)
 
-    return workflow.compile(checkpointer=checkpointer, interrupt_before=interrupt_before)
+    # ARCHITECTURE UPGRADE: 
+    # We compile with NO checkpointer and NO interrupts. 
+    # Laravel handles the memory. LangGraph just executes the graph.
+    return workflow.compile()

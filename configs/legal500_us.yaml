@@ -45,7 +45,7 @@ fields:
   initiatives_and_innovation:
     description: "Narrative detailing measures introduced or maintained over the last year to benefit clients."
   rankings_feedback:
-    description: "Feedback regarding existing rankings or commentary."
+    description: "The firm's strategic argument regarding their current ranking. If missing, ask the user to provide a persuasive, evidence-based argument justifying why the firm or a specific lawyer deserves to be elevated. Ask them what specific market shifts, recent hires, or complex matters justify this promotion."
   active_key_client:
     description: "The official name of the active key clients, and whether they are publishable."
   leading_partners:

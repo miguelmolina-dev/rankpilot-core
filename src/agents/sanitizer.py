@@ -16,7 +16,7 @@ class SanitizationBatch(BaseModel):
 
 # --- RECURSIVE HELPERS ---
 def get_long_string_fields(data: Any, path: str = "") -> Dict[str, str]:
-    """Recursively finds all string fields longer than 50 characters to sanitize."""
+    """Recursively finds all string fields longer than 50 characters to sanitize using dot notation."""
     long_strings = {}
     if isinstance(data, dict):
         for k, v in data.items():
@@ -24,7 +24,8 @@ def get_long_string_fields(data: Any, path: str = "") -> Dict[str, str]:
             long_strings.update(get_long_string_fields(v, new_path))
     elif isinstance(data, list):
         for i, item in enumerate(data):
-            new_path = f"{path}[{i}]"
+            # FIX: Use a dot for array indices instead of brackets (e.g., matters.0.matter_description)
+            new_path = f"{path}.{i}" if path else str(i)
             long_strings.update(get_long_string_fields(item, new_path))
     elif isinstance(data, str) and len(data) > 50:
         long_strings[path] = data
@@ -32,7 +33,8 @@ def get_long_string_fields(data: Any, path: str = "") -> Dict[str, str]:
 
 def apply_cleaned_field(data: Any, path: str, clean_text: str):
     """Recursively applies the cleaned text back to the specific dictionary path."""
-    keys = path.replace("]", "").split("[") if "[" in path else path.split(".")
+    # FIX: Now we can just safely split by dots
+    keys = path.split(".")
     
     current = data
     for key in keys[:-1]:
@@ -88,6 +90,7 @@ def sanitizer_node(state: AgentState) -> dict:
             "3. STRIP THE JUNK: Silently delete all raw URLs, internal ranking notes (e.g., 'Current ranking: Band 3'), and conversational filler.\n"
             "4. PRESERVE ALL FACTS (ZERO HALLUCINATION): You must retain every single concrete fact: client names, attorney names, dates, financial values, and specific jurisdictions. Do not invent cases or metrics.\n"
             "5. FOCUS ON IMPACT: Frame the firm's work not just as legal tasks, but as strategic market impact (e.g., 'first to market', 'navigating unprecedented insolvency', 'enabling cross-border scaling')."
+            "6. REFINE RANKING FEEDBACK: The user will provide a strategic argument for their desired ranking. Write in the first-person plural ('We believe...', 'Our practice...') as if the partners of the firm are speaking directly to the directory researchers. Your job is to elevate the prose to be highly persuasive and professional, but you MUST NOT invent new arguments, claims, or evidence. Only polish and structure the exact logic the user provided."
         )
 
         user_prompt = (
