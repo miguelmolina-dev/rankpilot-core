@@ -27,21 +27,21 @@ def main():
     print("\n[Local] Initializing state...")
 
     # Initial state mimicking what would be sent to initiate
-    current_state: AgentState = {
-        "base64_documents": [{"filename": file_path, "base64": b64_string}],
-        "decoded_file_paths": [],
-        "target_submission_type": "Legal500",
-        "input_document_type": None,
-        "submission": None,
-        "gaps": [],
-        "questions": [],
-        "history": [],
-        "new_answer": {"question_text": "", "answer": ""},
-        "output_base64": None,
-        "messages": [],
-        "current_step": "init",
-        "errors": []
-    }
+    current_state = AgentState(
+        base64_documents=[{"filename": file_path, "base64": b64_string}],
+        decoded_file_paths=[],
+        target_submission_type="Legal500",
+        input_document_type=None,
+        submission=None,
+        gaps=[],
+        questions=[],
+        history=[],
+        new_answer={"question_text": "", "answer": ""},
+        output_base64=None,
+        messages=[],
+        current_step="init",
+        errors=[]
+    )
 
     print("\n[Local] Starting first workflow invocation...")
 
@@ -59,7 +59,7 @@ def main():
     iteration = 0
     while current_state.get("gaps") and iteration < max_iterations:
         iteration += 1
-        gaps = current_state.get("gaps")
+        gaps = current_state.get("gaps", [])
         print(f"\n[Local] Remaining Gaps: {len(gaps)} (Iteration {iteration}/{max_iterations})")
 
         new_answer = current_state.get("new_answer", {})

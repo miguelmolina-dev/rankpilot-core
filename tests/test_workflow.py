@@ -12,17 +12,17 @@ class TestWorkflow(unittest.TestCase):
         dummy_content = b"Dummy PDF content"
         b64_string = base64.b64encode(dummy_content).decode('utf-8')
 
-        initial_state: AgentState = {
-            "base64_documents": [{"filename": "test.pdf", "base64": b64_string}],
-            "decoded_file_paths": [],
-            "target_submission_type": None,
-            "submission": None,
-            "gaps": [],
-            "questions": [],
-            "messages": [],
-            "current_step": "init",
-            "errors": []
-        }
+        initial_state = AgentState(
+            base64_documents=[{"filename": "test.pdf", "base64": b64_string}],
+            decoded_file_paths=[],
+            target_submission_type=None,
+            submission=None,
+            gaps=[],
+            questions=[],
+            messages=[],
+            current_step="init",
+            errors=[]
+        )
 
         # Run workflow
         result = workflow.invoke(initial_state)
@@ -30,11 +30,11 @@ class TestWorkflow(unittest.TestCase):
         # Verify it went through ingestion, classification, audit
         # The exact message depends on whether text was extracted. Since the dummy pdf is invalid, it outputs 'No text extracted'
         # The ingestion node messages won't be triggered if `extracted_text.strip()` is empty (because the dummy pdf text extraction fails).
-        self.assertTrue(any('Classification node:' in msg for msg in result['messages']))
+        self.assertTrue(any('Classification node:' in msg for msg in result.get('messages', [])))
 
         # We expect gaps for an empty submission, so interrogator should run
-        self.assertTrue(len(result["gaps"]) > 0)
-        self.assertTrue(result["new_answer"]["question_text"] != "")
+        self.assertTrue(len(result.get("gaps", [])) > 0)
+        self.assertTrue(result.get("new_answer", {}).get("question_text", "") != "")
 
         # Workflow now stops at interrogator to wait for Laravel
-        self.assertEqual(result["current_step"], "interrogator")
+        self.assertEqual(result.get("current_step"), "interrogator")

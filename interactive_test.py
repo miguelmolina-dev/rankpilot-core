@@ -61,9 +61,9 @@ def main():
     # We continue until there are no more gaps and we have an output base64
     max_iterations = 10
     iteration = 0
-    while current_state.get("gaps") and iteration < max_iterations:
+    while current_state.get("gaps", []) and iteration < max_iterations:
         iteration += 1
-        gaps = current_state.get("gaps")
+        gaps = current_state.get("gaps", [])
         print(f"\n[Frontend] Remaining Gaps: {len(gaps)} (Iteration {iteration}/{max_iterations})")
 
         # In this workflow, if there are gaps, the backend generates one question at a time

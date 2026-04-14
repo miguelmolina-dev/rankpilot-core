@@ -13,12 +13,12 @@ def update_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "update", "messages": []}
 
-    new_answer_dict = state.get("new_answer", {})
+    new_answer_dict = getattr(state, "new_answer", {})
     question_text = new_answer_dict.get("question_text", "")
     answer_text = new_answer_dict.get("answer", "")
 
     # Keep existing history if missing
-    history = state.get("history", [])
+    history = getattr(state, "history", [])
 
     if answer_text:
         # Append to history
@@ -30,8 +30,8 @@ def update_node(state: AgentState) -> dict:
 
         # Now, update the submission based on the new answer.
         # We'll use LLM to map the answer into the submission schema.
-        submission_data = state.get("submission")
-        target_submission_type = state.get("target_submission_type", "Legal500")
+        submission_data = getattr(state, "submission", None)
+        target_submission_type = getattr(state, "target_submission_type", "Legal500") or "Legal500"
 
         if submission_data:
             current_submission_dict = submission_data.model_dump()

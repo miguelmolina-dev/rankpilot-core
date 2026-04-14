@@ -17,8 +17,8 @@ def classification_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "classification", "messages": []}
 
-    decoded_file_paths = state.get("decoded_file_paths", []) or []
-    b64_docs = state.get("base64_documents", [])
+    decoded_file_paths = getattr(state, "decoded_file_paths", []) or []
+    b64_docs = getattr(state, "base64_documents", [])
 
     if b64_docs:
         for doc in b64_docs:
@@ -50,7 +50,7 @@ def classification_node(state: AgentState) -> dict:
 
     updates["decoded_file_paths"] = decoded_file_paths
 
-    input_document_type = state.get("input_document_type")
+    input_document_type = getattr(state, "input_document_type", None)
 
     if extracted_text.strip() and not input_document_type:
         try:

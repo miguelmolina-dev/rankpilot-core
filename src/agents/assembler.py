@@ -10,13 +10,13 @@ def assembly_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "assembly", "messages": []}
 
-    submission_data = state.get("submission")
+    submission_data = getattr(state, "submission", None)
     if submission_data:
         submission_dict = submission_data.model_dump(exclude_none=True)
     else:
         submission_dict = {}
 
-    sub_type = state.get("target_submission_type", "Legal500")
+    sub_type = getattr(state, "target_submission_type", "Legal500") or "Legal500"
 
     if sub_type == "Legal500":
         strategy = Legal500Strategy()

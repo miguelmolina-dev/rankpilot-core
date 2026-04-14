@@ -14,7 +14,7 @@ def route_after_audit(state: AgentState) -> Literal["interrogator_node", "assemb
     If there are gaps, go to interrogator.
     If no gaps, go to assembly.
     """
-    gaps = state.get("gaps", [])
+    gaps = getattr(state, "gaps", [])
     if len(gaps) > 0:
         return "interrogator_node"
     return "assembly_node"
@@ -24,7 +24,7 @@ def route_entry(state: AgentState) -> Literal["update_node", "classification_nod
     If new_answer has an answer, we route to update_node.
     Otherwise, we route to ingestion_node (initial start).
     """
-    new_answer = state.get("new_answer", {})
+    new_answer = getattr(state, "new_answer", {})
     if new_answer.get("answer"):
         return "update_node"
     return "classification_node"
