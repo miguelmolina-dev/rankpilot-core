@@ -17,7 +17,7 @@ def interrogator_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "interrogator", "messages": []}
 
-    gaps = getattr(state, "gaps", [])
+    gaps = getattr(state, "gaps", []) or []
     question = ""
 
     if gaps:
