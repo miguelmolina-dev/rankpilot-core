@@ -4,6 +4,33 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
 from src.core.schemas import AnchorSubmission, Legal500Submission
+from src.io.pdf_parser import get_submission_chunks
+
+def merge_extracted_data(data1, data2):
+    if data1 is None: return data2
+    if data2 is None: return data1
+
+    dict1 = data1.model_dump()
+    dict2 = data2.model_dump()
+
+    def deep_merge(d1, d2):
+        for k, v2 in d2.items():
+            if k not in d1:
+                d1[k] = v2
+                continue
+
+            v1 = d1.get(k)
+            if isinstance(v1, dict) and isinstance(v2, dict):
+                d1[k] = deep_merge(v1, v2)
+            elif isinstance(v1, list) and isinstance(v2, list):
+                d1[k] = v1 + v2
+            else:
+                if v2 is not None and (v1 is None or v1 == "" or v1 == [] or v1 == {}):
+                    d1[k] = v2
+        return d1
+
+    merged_dict = deep_merge(dict1, dict2)
+    return data1.__class__(**merged_dict)
 
 def ingestion_node(state: AgentState) -> dict:
     """
@@ -59,14 +86,32 @@ def ingestion_node(state: AgentState) -> dict:
             ])
 
             chain = prompt | structured_llm
-            output = chain.invoke({
-                "text": extracted_text, 
-                "input_document_type": input_document_type
-            })
 
-            extracted_data = output.get("parsed")
+            if "chambers" in input_document_type.lower():
+                chunks = get_submission_chunks(extracted_text)
+                merged_data = None
+                for chunk_name, chunk_text in chunks.items():
+                    if not chunk_text.strip():
+                        continue
+                    output = chain.invoke({
+                        "text": chunk_text,
+                        "input_document_type": input_document_type
+                    })
+                    chunk_data = output.get("parsed")
+                    if chunk_data:
+                        merged_data = merge_extracted_data(merged_data, chunk_data)
+
+                extracted_data = merged_data
+            else:
+                output = chain.invoke({
+                    "text": extracted_text,
+                    "input_document_type": input_document_type
+                })
+                extracted_data = output.get("parsed")
+
             if not extracted_data:
-                raise ValueError("Structured LLM returned empty data or failed to parse. Details: " + str(output.get("parsing_error")))
+                # Provide a better error if no chunks returned anything or parsing failed
+                raise ValueError("Structured LLM returned empty data or failed to parse.")
 
             # Update submission in state
             updates["submission"] = extracted_data
