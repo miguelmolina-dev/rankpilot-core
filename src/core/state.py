@@ -44,6 +44,9 @@ class AgentState(BaseModel):
     current_step: str = ""
     extracted_text: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
+    
+    # --- NEW: Track fields the user explicitly skipped or doesn't have ---
+    dismissed_gaps: List[str] = Field(default_factory=list)
 
     # ==========================================
     # NEW: The Sanitization Bouncer
