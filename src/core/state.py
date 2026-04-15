@@ -1,6 +1,6 @@
 import operator
 from typing import Annotated, List, Dict, Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from src.core.schemas import BaseSubmission
 
 
@@ -30,6 +30,9 @@ class AgentState(BaseModel):
     # History of Q&A interactions with Laravel
     history: List[str] = Field(default_factory=list)
 
+    # --- NEW: Accept raw text directly from the Laravel UI ---
+    raw_input_text: str = ""
+
     # Current question and incoming answer from Laravel
     new_answer: Dict[str, str] = Field(default_factory=dict)
 
@@ -41,3 +44,28 @@ class AgentState(BaseModel):
     current_step: str = ""
     extracted_text: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
+
+    # ==========================================
+    # NEW: The Sanitization Bouncer
+    # ==========================================
+    @field_validator("target_submission_type", mode="before")
+    @classmethod
+    def normalize_submission_type(cls, value: Optional[str]) -> Optional[str]:
+        """
+        Intercepts the incoming string from Laravel and aggressively cleans it.
+        Converts 'Legal 500', 'Legal-500', 'legal_500' -> 'Legal500'
+        """
+        if not value:
+            return value
+            
+        # 1. Convert to lowercase and strip out all spaces, hyphens, and underscores
+        cleaned = value.lower().replace(" ", "").replace("-", "").replace("_", "")
+        
+        # 2. Force it into the exact official formats
+        if "legal" in cleaned and "500" in cleaned:
+            return "Legal500"
+        if "chambers" in cleaned:
+            return "Chambers"
+            
+        # If it's something entirely different, return it capitalized just in case
+        return value.capitalize()
