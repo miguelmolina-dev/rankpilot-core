@@ -1,5 +1,5 @@
 # 1. Imagen base de Python
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 # 2. Instalar dependencias del sistema (LaTeX y utilidades)
 RUN apt-get update && apt-get install -y \
