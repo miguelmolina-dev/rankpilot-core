@@ -16,7 +16,6 @@ class AgentState(BaseModel):
 
     # Type of submission (e.g. Legal500 US 2026, Chambers Global)
     target_submission_type: Optional[str] = None
-    input_document_type: Optional[str] = None
 
     # The main structured data we are extracting and building
     submission: Optional[BaseSubmission] = None
