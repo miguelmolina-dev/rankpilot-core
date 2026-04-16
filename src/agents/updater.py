@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import AnchorSubmission, Legal500Submission
+from src.core.schemas import ChambersSubmission, Legal500Submission
 
 # --- NUEVOS ESQUEMAS DE PARCHE ---
 class FieldUpdate(BaseModel):
@@ -75,24 +75,37 @@ def update_node(state: AgentState) -> dict:
 
             if target_submission_type == "Legal500":
                 schema_class = Legal500Submission
-            else:
-                schema_class = AnchorSubmission
+            elif target_submission_type == "Chambers":
+                schema_class = ChambersSubmission
 
             # USAMOS EL PATCH EN LUGAR DEL SCHEMA COMPLETO
             structured_llm = llm.with_structured_output(SubmissionPatch, include_raw=True)
             schema_blueprint = json.dumps(schema_class.model_json_schema())
 
             system_prompt = (
-                "You are an elite legal data extraction assistant. "
-                "Instead of rewriting the entire document, your job is to output ONLY the specific fields that need to be updated based on the user's answer.\n\n"
+                "### 1. PERSONA ###\n"
+                "You are an elite Data Architect and Legal Analyst specializing in Legal 500 and Chambers directory submissions. "
+                "You possess a flawless understanding of complex JSON schemas and precise data extraction.\n\n"
+                
+                "### 2. CONTEXT ###\n"
+                "The user is incrementally building a complex legal directory submission. "
+                "You are receiving a raw answer from the user that is meant to fill a specific missing gap in the document. "
+                "Below is the architectural blueprint of the entire document:\n"
                 "REFERENCE SCHEMA BLUEPRINT:\n"
                 "{schema_blueprint}\n\n"
-                "CRITICAL INSTRUCTIONS:\n"
-                "1. Extract the requested data for the 'Target Field'.\n"
-                "2. OPPORTUNISTIC EXTRACTION: If the user's answer contains information that fits other fields in the 'Missing Fields' list, extract those too.\n"
-                "3. STRICT TYPING: Look at the Reference Schema Blueprint. Your 'json_value' MUST perfectly match the required structure for that specific field. "
-                "4. PRECISION TARGETING: Your 'field_name' MUST exactly match the specific leaf-node name from the 'Missing Fields' list (e.g., use 'initiatives_and_innovation', do NOT use the parent category 'narratives')."
-                "If the blueprint dictates an array of objects with specific keys (e.g., [{{\"publishable_summary\": \"text\"}}]), you MUST NOT output a simple array of strings."
+                
+                "### 3. THE TASK ###\n"
+                "Analyze the user's answer and extract the relevant data to update the 'Target Field'. "
+                "Additionally, practice OPPORTUNISTIC EXTRACTION: if the user accidentally provided information that perfectly answers other fields in the 'Missing Fields' list, extract that data as well and create separate update patches for them.\n\n"
+                
+                "### 4. CRITICAL CONSTRAINTS (MUST FOLLOW) ###\n"
+                "- PRECISION TARGETING: Your 'field_name' MUST exactly match the specific leaf-node name from the schema (e.g., use 'initiatives_and_innovation', do NOT use parent categories like 'narratives').\n"
+                "- STRICT TYPING: Your 'json_value' MUST perfectly match the data structure dictated by the Reference Schema Blueprint.\n"
+                "- COMPLEX ARRAYS: If the blueprint dictates an array of objects (e.g., `[{{\"name\": \"str\", \"details\": \"str\"}}]`), you MUST output a valid JSON array of dictionaries. NEVER output a simple array of strings if objects are expected.\n"
+                "- NO HALLUCINATIONS: Do not invent data. Only extract what the user explicitly provided.\n\n"
+                
+                "### 5. FORMAT ###\n"
+                "You will output a list of FieldUpdate objects. The `json_value` field MUST be a perfectly escaped JSON string (use double quotes for keys and string values) so it can be safely parsed by Python's `json.loads()`."
             )
 
             # Removed the 'f' prefix. These are now LangChain variables.
@@ -139,8 +152,8 @@ def update_node(state: AgentState) -> dict:
             # RE-VALIDAR CON EL ESQUEMA ORIGINAL
             if target_submission_type == "Legal500":
                 updated_submission = Legal500Submission(**current_submission_dict)
-            else:
-                updated_submission = AnchorSubmission(**current_submission_dict)
+            elif target_submission_type == "Chambers":
+                updated_submission = ChambersSubmission(**current_submission_dict)
 
             updates["submission"] = updated_submission
 

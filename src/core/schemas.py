@@ -138,8 +138,14 @@ class PartnerStats(BaseModel):
 class DepartmentLawyersRanked(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the lawyer.")
     comments_or_web_link: Optional[str] = Field(None, description="Include the bio URL or specific comments/key areas of focus listed for this lawyer.")
-    is_partner: Optional[bool] = Field(None, description="Evaluate if they are a partner. Map 'Y'/'Yes' to true, 'N'/'No' to false.")
-    is_ranked: Optional[bool] = Field(None, description="Evaluate if they are already ranked. Map 'Y'/'Yes' to true, 'N'/'No' to false.")
+    is_partner: Optional[str] = Field(
+        None, 
+        description="Evaluate if they are a partner based on the text. You MUST output exactly 'Y' or 'N'. Do not include any other words, explanations, or parentheses."
+    )
+    is_ranked: Optional[str] = Field(
+        None, 
+        description="Evaluate if they are already ranked based on the text. You MUST output exactly 'Y' or 'N'. Do not include any other words, explanations, or parentheses."
+    )
     parental_leave_or_part_time: Optional[str] = Field(None, description="Details regarding parental leave or part-time arrangements. Return null if blank.")
 
 class HireDeparture(BaseModel):
@@ -151,6 +157,7 @@ class DepartmentInfoFeature(BaseModel):
     B1_department_name: Optional[str] = Field(None, description="The internal name the firm uses for this specific department.")
     B2_partners: Optional[PartnerStats] = Field(None, description="Total number and gender ratio of partners in the department.")
     B3_other_qualified_lawyers: Optional[PartnerStats] = Field(None, description="Total number and gender ratio of other qualified lawyers (associates, counsels).")
+    B4_department_heads: List[ContactPerson] = Field(default_factory=list, description="List of Department Head(s) or Key Partners (USA Template).")
     B5_diversity_lgbt_percentage: Optional[str] = Field(None, description="Percentage of the team identifying as LGBT+. Must be a raw number/percentage string. Return null if blank.")
     B6_diversity_disability_percentage: Optional[str] = Field(None, description="Percentage of the team with a disability. Must be a raw number/percentage string. Return null if blank.")
     B7_heads_of_department: List[ContactPerson] = Field(default_factory=list, description="List of the Heads of the Department.")
@@ -204,7 +211,10 @@ class ConfidentialInformationFeature(BaseModel):
     E0_confidential_clients_list: List[PublishableClient] = Field(default_factory=list, description="List of clients whose identities MUST remain strictly confidential.")
     confidential_matters: List[ConfidentialMatter] = Field(default_factory=list, description="List of confidential work highlights. These matters are protected and not for publication.")
 
-class AnchorSubmission(BaseSubmission):
+class ChambersSubmission(BaseSubmission):
+    """
+    Top-level schema for Chambers Global and Chambers USA submissions.
+    """
     A_preliminary_information: Optional[PreliminaryInformation] = None
     B_department_information: Optional[DepartmentInfoFeature] = None
     C_feedback: Optional[FeedbackFeature] = None

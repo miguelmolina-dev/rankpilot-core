@@ -4,7 +4,7 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import AnchorSubmission, Legal500Submission
+from src.core.schemas import ChambersSubmission, Legal500Submission
 from src.io.pdf_data_chunking import chunk_chambers_submission
 
 def ingestion_node(state: AgentState) -> dict:
@@ -34,7 +34,7 @@ def ingestion_node(state: AgentState) -> dict:
             if target_submission_type == "Legal500":
                 schema_class = Legal500Submission
             else:
-                schema_class = AnchorSubmission
+                schema_class = ChambersSubmission
 
             structured_llm = llm.with_structured_output(schema_class, include_raw=True)
 

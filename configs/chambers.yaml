@@ -1,8 +1,111 @@
-name: "Chambers Global"
+# ---------------------------------------------------------
+# 1. THE AUDIT RULEBOOK
+# The auditor uses these exact dot-notation paths to check for gaps.
+# ---------------------------------------------------------
 required_fields:
-  - "A_preliminary_information.A1_firm_name"
-  - "A_preliminary_information.A2_practice_area"
-  - "A_preliminary_information.A3_location_jurisdiction"
-  - "B_department_information.B1_department_name"
-  - "B_department_information.B10_department_best_known_for"
-  - "D_publishable_information.publishable_matters"
+  # --- SECTION A: Identity ---
+  - "SectionA.A1_firm_name"
+  - "SectionA.A2_practice_area"
+  - "SectionA.A3_location_jurisdiction"
+  
+  # --- SECTION B: Department Info & Headcounts ---
+  - "SectionB.B1_department_name"
+  - "SectionB.B2_number_of_partners"
+  - "SectionB.B3_number_of_other_qualified_lawyers"
+  - "SectionB.B10_department_best_known_for"
+  
+  # --- SECTION B: Deep Array Checks (Ensure they provided Contacts) ---
+  - "SectionA.A4_contact_person.0.name" 
+  - "SectionA.A4_contact_person.0.email"
+  - "SectionB.B7_head_of_department.0.name"
+
+  # --- SECTION D: Publishable Matter 1 (Strict Financial & Strategy details) ---
+  - "D_publishable_information.publishable_matters.0.D1_client_name"
+  - "D_publishable_information.publishable_matters.0.D2_summary"
+  - "D_publishable_information.publishable_matters.0.D3_value"
+  - "D_publishable_information.publishable_matters.0.D4_cross_border"
+  - "D_publishable_information.publishable_matters.0.D5_lead_partner"
+  - "D_publishable_information.publishable_matters.0.D6_other_team_members"
+
+# ---------------------------------------------------------
+# 2. THE SCHEMA & DESCRIPTIONS
+# The AI uses this to understand the structure and generate questions.
+# ---------------------------------------------------------
+schema:
+  name: "Chambers Global Submission"
+  description: "Data extraction schema and blueprint for Chambers Global."
+  
+  sections:
+    A_preliminary_information:
+      description: "Basic firm, practice area, and contact details."
+      fields:
+        A1_firm_name: 
+          description: "The official name of the law firm."
+        A2_practice_area: 
+          description: "The specific practice area selected for this submission."
+        A3_location_jurisdiction: 
+          description: "The geographic location or jurisdiction for the submission."
+        A4_contact_person: 
+          description: "List of contacts to arrange interviews, including Name, Email, and Telephone number."
+          
+    B_department_information:
+      description: "Information regarding the team's composition, leadership, recent changes, and core strengths."
+      fields:
+        B1_department_name: 
+          description: "The internal name the firm uses for this department."
+        B2_number_of_partners: 
+          description: "Total number of partners in the department, including Male/Female ratio as a percentage."
+        B3_number_of_other_qualified_lawyers: 
+          description: "Total number of non-partner lawyers, including Male/Female ratio as a percentage."
+        B7_head_of_department: 
+          description: "Name, Email, and Telephone number of the Head(s) of the department."
+        B8_hires_and_departures: 
+          description: "Significant partner arrivals or departures in the last 12 months, including where they joined from or departed to."
+        B9_ranked_and_unranked_lawyers: 
+          description: "List of lawyers to highlight, including Name, web link/comments, whether they are a partner, and if they are currently ranked."
+        B10_department_best_known_for: 
+          description: "A 500-word narrative covering industry sector expertise, key types of work, areas of recent growth, and feedback on recent coverage."
+
+    C_feedback:
+      description: "Optional feedback on the directory and coverage."
+      fields:
+        C1_barristers_used:
+          description: "Details of barristers/advocates used in specific regions (Name, Firm/Set, Comments)."
+        C2_feedback_on_other_firms:
+          description: "Optional feedback on Chambers' coverage of other firms in this practice area."
+
+    D_publishable_information:
+      description: "Clients and matters that can be published in the directory."
+      fields:
+        D0_publishable_clients:
+          description: "List of clients the firm is permitted to mention publicly, including whether they are new clients."
+        publishable_matters:
+          description: "Array of up to 10 publishable work highlights."
+          item_structure:
+            D1_client_name: "Name of the client or general description."
+            D2_summary: "Summary of the matter, why it was important, and the department's exact role."
+            D3_value: "The financial value of the matter, including currency."
+            D4_cross_border: "Whether it was cross-border, and if yes, the jurisdictions involved."
+            D5_lead_partner: "The lead partner(s) on the matter."
+            D6_other_team_members: "Other lawyers who worked on the matter."
+            D7_other_firms: "Other law firms advising on the matter and their roles."
+            D8_date_or_status: "The date of completion or current status of the matter."
+            D9_other_info: "Links to press coverage or other relevant details."
+
+    E_confidential_information:
+      description: "Clients and matters strictly for internal ranking purposes and NOT for publication."
+      fields:
+        E0_confidential_clients:
+          description: "List of confidential clients, including whether they are new clients."
+        confidential_matters:
+          description: "Array of up to 10 confidential work highlights."
+          item_structure:
+            E1_client_name: "Name of the client."
+            E2_summary: "Summary of the matter, why it was important, and the department's exact role."
+            E3_value: "The financial value of the matter, including currency."
+            E4_cross_border: "Whether it was cross-border, and if yes, the jurisdictions involved."
+            E5_lead_partner: "The lead partner(s) on the matter."
+            E6_other_team_members: "Other lawyers who worked on the matter."
+            E7_other_firms: "Other law firms advising on the matter and their roles."
+            E8_date_or_status: "The date of completion or current status of the matter."
+            E9_other_info: "Any additional confidential information."

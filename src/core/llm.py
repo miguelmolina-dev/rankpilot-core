@@ -9,7 +9,7 @@ def get_llm(temperature: float = 0.2):
     or a server-deployed OpenAI model (production/server environment), based on environment variables.
     """
     # Determine the environment
-    environment = "development"
+    environment = os.getenv("ENVIRONMENT", "production").lower() 
 
     if environment == "local":
 

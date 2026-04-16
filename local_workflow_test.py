@@ -30,8 +30,8 @@ def main():
     current_state = AgentState(
         base64_documents=[{"filename": file_path, "base64": b64_string}],
         decoded_file_paths=[],
-        target_submission_type="Legal500",
-        input_document_type=None,
+        target_submission_type="Chambers", # <--- CHANGE THIS TO 'Chambers'
+        input_document_type="Chambers",    # <--- Optional: Helps the AI extractor
         submission=None,
         gaps=[],
         questions=[],

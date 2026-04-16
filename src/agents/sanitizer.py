@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import AnchorSubmission, Legal500Submission
+from src.core.schemas import ChambersSubmission, Legal500Submission
 
 # --- STRUCTURED OUTPUT MODELS ---
 class CleanedField(BaseModel):
@@ -118,7 +118,7 @@ def sanitizer_node(state: AgentState) -> dict:
         if target_submission_type == "Legal500":
             updates["submission"] = Legal500Submission(**submission_dict)
         else:
-            updates["submission"] = AnchorSubmission(**submission_dict)
+            updates["submission"] = ChambersSubmission(**submission_dict)
 
     except Exception as e:
         import traceback
