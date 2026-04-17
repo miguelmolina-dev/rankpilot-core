@@ -1,6 +1,7 @@
 from src.core.state import AgentState
 from src.strategies.legal500 import Legal500Strategy
 from src.strategies.chambers import ChambersStrategy
+from src.strategies.leaders_league import LeadersLeagueStrategy
 
 def audit_node(state: AgentState) -> dict:
     """
@@ -22,6 +23,8 @@ def audit_node(state: AgentState) -> dict:
         strategy = Legal500Strategy()
     elif sub_type == "Chambers":
         strategy = ChambersStrategy()
+    elif sub_type == "LeadersLeague":
+        strategy = LeadersLeagueStrategy() # <--- ADD THIS
     else:
         # fallback
         strategy = Legal500Strategy()

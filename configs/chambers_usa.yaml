@@ -2,28 +2,65 @@
 # 1. THE AUDIT RULEBOOK
 # The auditor uses these exact dot-notation paths to check for gaps.
 # ---------------------------------------------------------
+# ==========================================
+# THE CHAMBERS EDITORIAL AI BRAIN
+# ==========================================
+name: "Chambers - USA"
+target_submission_type: "Chambers"
+template_file: "USA_Chambers_submission_form_template.docx"
+
+copywriting_guidelines: |
+  CRITICAL CHAMBERS EDITORIAL RULES:
+  You are writing for Chambers and Partners researchers, who are highly qualitative, critical, and conservative. You must adhere to the following unwritten rules:
+  
+  1. STRICTLY NO OVERCLAIMING: Never use inflated marketing hyperbole. Do NOT use phrases like "undisputed leader," "top firm," "absolute reference," or "best-in-class." Chambers actively punishes narrative inflation. Rely on objective, concrete facts to prove excellence.
+  2. ESTABLISH COMPETITIVE IDENTITY: Do not just list legal tasks. Explicitly articulate *why* this practice matters, its real market strength, the specific types of complex mandates where it shines, and what makes it fundamentally distinct from competitors.
+  3. MAINTAIN EDITORIAL COHERENCE: Ensure the narrative seamlessly connects the matters, the team structure, and the firm's market position. The pitch must perfectly match the evidence provided in the work highlights.
+  4. HIGHLIGHT BENCH DEPTH (HUMAN STRUCTURE): Whenever possible, emphasize the stability, continuity, and depth of the entire team. Highlight the involvement of next-generation partners and senior associates to prove institutional solidity, rather than focusing solely on one star partner.
+  5. SUBTLETY OVER HYPERBOLE: Tolerate ambition, but prove it through nuances, consistency, and fine signals rather than rigid boasting.
+
+name: "Chambers - USA"
+target_submission_type: "Chambers"
+template_file: "USA_Chambers_submission_form_template.docx"
+
+# ==========================================
+# THE CHAMBERS EDITORIAL AI BRAIN
+# ==========================================
+copywriting_guidelines: |
+  CRITICAL CHAMBERS EDITORIAL RULES:
+  You are writing for Chambers and Partners researchers, who are highly qualitative, critical, and conservative. You must adhere to the following unwritten rules:
+  
+  1. STRICTLY NO OVERCLAIMING: Never use inflated marketing hyperbole. Do NOT use phrases like "undisputed leader," "top firm," "absolute reference," or "best-in-class." Chambers actively punishes narrative inflation. Rely on objective, concrete facts to prove excellence.
+  2. ESTABLISH COMPETITIVE IDENTITY: Do not just list legal tasks. Explicitly articulate *why* this practice matters, its real market strength, the specific types of complex mandates where it shines, and what makes it fundamentally distinct from competitors.
+  3. MAINTAIN EDITORIAL COHERENCE: Ensure the narrative seamlessly connects the matters, the team structure, and the firm's market position. The pitch must perfectly match the evidence provided in the work highlights.
+  4. HIGHLIGHT BENCH DEPTH (HUMAN STRUCTURE): Whenever possible, emphasize the stability, continuity, and depth of the entire team. Highlight the involvement of next-generation partners and senior associates to prove institutional solidity, rather than focusing solely on one star partner.
+  5. SUBTLETY OVER HYPERBOLE: Tolerate ambition, but prove it through nuances, consistency, and fine signals rather than rigid boasting.
+
+# ---------------------------------------------------------
+# THE AUDIT RULEBOOK (STRING BASED)
+# ---------------------------------------------------------
 required_fields:
   # --- SECTION A: Identity ---
-  - "SectionA.A1_firm_name"
-  - "SectionA.A2_practice_area"
-  - "SectionA.A3_location_jurisdiction"
+  - "A_preliminary_information.A1_firm_name"
+  - "A_preliminary_information.A2_practice_area"
+  - "A_preliminary_information.A3_location_jurisdiction"
   
   # --- SECTION B: Department Info & Headcounts ---
-  - "SectionB.B1_department_name"
-  - "SectionB.B2_number_of_partners"
-  - "SectionB.B3_number_of_other_qualified_lawyers"
-  - "SectionB.B10_department_best_known_for"
+  - "B_department_information.B1_department_name"
+  - "B_department_information.B2_partners.total_number"
+  - "B_department_information.B3_other_qualified_lawyers.total_number"
+  - "B_department_information.B10_department_best_known_for"
   
-  # --- SECTION B: Deep Array Checks (Ensure they provided Contacts) ---
-  - "SectionA.A4_contact_person.0.name" 
-  - "SectionA.A4_contact_person.0.email"
-  - "SectionB.B7_head_of_department.0.name"
+  # --- SECTION A/B: Deep Array Checks (Ensure they provided Contacts) ---
+  - "A_preliminary_information.A4_contact_persons.0.name"
+  - "A_preliminary_information.A4_contact_persons.0.email"
+  - "B_department_information.B7_heads_of_department.0.name"
 
   # --- SECTION D: Publishable Matter 1 (Strict Financial & Strategy details) ---
-  - "D_publishable_information.publishable_matters.0.D1_client_name"
-  - "D_publishable_information.publishable_matters.0.D2_summary"
-  - "D_publishable_information.publishable_matters.0.D3_value"
-  - "D_publishable_information.publishable_matters.0.D4_cross_border"
+  - "D_publishable_information.publishable_matters.0.D1_name_of_client"
+  - "D_publishable_information.publishable_matters.0.D2_summary_of_matter_and_role"
+  - "D_publishable_information.publishable_matters.0.D3_matter_value"
+  - "D_publishable_information.publishable_matters.0.D4_cross_border_jurisdictions"
   - "D_publishable_information.publishable_matters.0.D5_lead_partner"
   - "D_publishable_information.publishable_matters.0.D6_other_team_members"
 

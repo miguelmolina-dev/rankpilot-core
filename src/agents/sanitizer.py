@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import ChambersSubmission, Legal500Submission
+from src.core.schemas import ChambersSubmission, Legal500Submission, LeadersLeagueSubmission
 
 # --- STRUCTURED OUTPUT MODELS ---
 class CleanedField(BaseModel):
@@ -74,6 +74,8 @@ def sanitizer_node(state: AgentState) -> dict:
 
     # Convert to a readable string for the LLM
     dirty_data_context = "\n".join([f"KEY: {k}\nTEXT: {v}\n---" for k, v in text_fields_to_clean.items()])
+    taml_config = getattr(state, "config", {}) or {}
+    custom_guidelines = taml_config.get("copywriting_guidelines", "No additional guidelines provided.")
 
     try:
         # We can increase the temperature slightly (e.g., 0.2 or 0.3) to allow for better phrasing and vocabulary.
@@ -84,6 +86,10 @@ def sanitizer_node(state: AgentState) -> dict:
             "You are an elite Legal Copywriter and Strategist working for a top-tier law firm. "
             "Your job is to take raw, messy, internal notes scraped from a submission draft and transform them into "
             "persuasive, highly professional, partner-level prose ready for submission to Legal500 or Chambers & Partners.\n\n"
+            "=========================================\n"
+            "DIRECTORY-SPECIFIC COPYWRITING RULES:\n"
+            f"{custom_guidelines}\n"
+            "=========================================\n\n"
             "CRITICAL COPYWRITING INSTRUCTIONS:\n"
             "1. ELEVATE THE TONE: Rewrite the text to be authoritative, commercially aware, and punchy. Use high-end legal and business vocabulary (e.g., instead of 'we do FinTech', use 'we provide strategic counsel navigating the intersection of complex regulatory frameworks and digital innovation').\n"
             "2. STRUCTURE FOR SCANNABILITY: Legal evaluators read thousands of these. If the input contains multiple distinct concepts (e.g., 'Growing team', 'Cross-border capabilities'), format them using clear, bolded bullet points or short, powerful paragraphs.\n"
@@ -117,6 +123,8 @@ def sanitizer_node(state: AgentState) -> dict:
         # 3. Re-validate through Pydantic to ensure the schema is still perfect
         if target_submission_type == "Legal500":
             updates["submission"] = Legal500Submission(**submission_dict)
+        elif target_submission_type == "LeadersLeague":
+            updates["submission"] = LeadersLeagueSubmission(**submission_dict)
         else:
             updates["submission"] = ChambersSubmission(**submission_dict)
 

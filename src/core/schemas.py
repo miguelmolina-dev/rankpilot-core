@@ -1,9 +1,30 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
-# ---------------------------------------------------------
-# Legal 500 Specific Models
-# ---------------------------------------------------------
+# =====================================================================
+#
+#                         BASE SUBMISSION
+#
+# =====================================================================
+
+class BaseSubmission(BaseModel):
+    """
+    Base submission class.
+    Different ranking templates (Legal500, Chambers) will extend this
+    or be structurally compatible with the overarching strategy pattern.
+    """
+    pass
+
+
+# =====================================================================
+#
+#                         LEGAL 500 SCHEMA
+#
+# =====================================================================
+
+# -----------------------------------
+# Identity & Contacts (Legal 500)
+# -----------------------------------
 class InterviewContact(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the interview contact.")
     job_title: Optional[str] = Field(None, description="Job title of the contact.")
@@ -16,6 +37,9 @@ class Identity(BaseModel):
     practice_area: Optional[str] = Field(None, description="The specific practice area selected for this submission.")
     interview_contacts: List[InterviewContact] = Field(default_factory=list, description="List of contacts to arrange interviews with.")
 
+# -----------------------------------
+# Department Information (Legal 500)
+# -----------------------------------
 class HeadOfTeam(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the team or department head.")
     location: Optional[str] = Field(None, description="Office location or city of the team head.")
@@ -34,11 +58,9 @@ class Narratives(BaseModel):
     initiatives_and_innovation: Optional[str] = Field(None, description="Narrative detailing measures introduced or maintained over the last year to benefit clients.")
     rankings_feedback: Optional[str] = Field(None, description="Feedback regarding existing rankings or commentary. Return null if blank.")
 
-class Client(BaseModel):
-    active_key_client: Optional[str] = Field(None, description="The official name of the active key client.")
-    is_new_client: bool = Field(False, description="Determine if this is a new client. Map 'Yes' or 'Y' to true, 'No', 'N' or blank to false.")
-    is_publishable: bool = Field(False, description="Whether the client is publishable.")
-
+# -----------------------------------
+# Nominations & People (Legal 500)
+# -----------------------------------
 class Partner(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the leading partner.")
     location: Optional[str] = Field(None, description="Office location or city of the partner.")
@@ -64,6 +86,14 @@ class IndividualNominations(BaseModel):
 
 class TeamDynamics(BaseModel):
     arrivals_and_departures: List[ArrivalDeparture] = Field(default_factory=list, description="List of significant recent arrivals, departures, or promotions at the partner level.")
+
+# -----------------------------------
+# Clients & Matters (Legal 500)
+# -----------------------------------
+class Client(BaseModel):
+    active_key_client: Optional[str] = Field(None, description="The official name of the active key client.")
+    is_new_client: bool = Field(False, description="Determine if this is a new client. Map 'Yes' or 'Y' to true, 'No', 'N' or blank to false.")
+    is_publishable: bool = Field(False, description="Whether the client is publishable.")
 
 class WorkHighlight(BaseModel):
     publishable_summary: Optional[str] = Field(None, description="A brief 1-2 sentence summary of a highlight matter (e.g., 'Advised X on acquisition of Y'). MUST be publishable.")
@@ -96,15 +126,9 @@ class Matter(BaseModel):
     dates: Optional[Dates] = Field(None, description="Start and end dates for the matter.")
     is_publishable: bool = Field(False)
 
-
-class BaseSubmission(BaseModel):
-    """
-    Base submission class.
-    Different ranking templates (Legal500, Chambers) will extend this
-    or be structurally compatible with the overarching strategy pattern.
-    """
-    pass
-
+# -----------------------------------
+# Top-Level Document (Legal 500)
+# -----------------------------------
 class Legal500Submission(BaseSubmission):
     identity: Optional[Identity] = None
     department_info: Optional[DepartmentInfo] = None
@@ -115,10 +139,16 @@ class Legal500Submission(BaseSubmission):
     work_highlights_summaries: List[WorkHighlight] = Field(default_factory=list, max_length=3, description="Up to 3 brief summaries of publishable work highlights.")
     matters: List[Matter] = Field(default_factory=list)
 
-# ---------------------------------------------------------
-# Anchor Models (Chambers / Universal)
-# ---------------------------------------------------------
 
+# =====================================================================
+#
+#                           CHAMBERS SCHEMA
+#
+# =====================================================================
+
+# -----------------------------------
+# Section A: Preliminary Information
+# -----------------------------------
 class ContactPerson(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the contact person.")
     email: Optional[str] = Field(None, description="Email address. Extract cleanly without mailto: prefixes.")
@@ -130,6 +160,9 @@ class PreliminaryInformation(BaseModel):
     A3_location_jurisdiction: Optional[str] = Field(None, description="The country or jurisdiction the submission applies to.")
     A4_contact_persons: List[ContactPerson] = Field(default_factory=list, description="List of personnel designated to arrange interviews.")
 
+# -----------------------------------
+# Section B: Department Information
+# -----------------------------------
 class PartnerStats(BaseModel):
     total_number: Optional[int] = Field(None, description="The total raw integer number of lawyers/partners in this category. Return 0 if none.")
     male_ratio_percentage: Optional[str] = Field(None, description="The percentage of males. Include the '%' sign if present in text.")
@@ -138,14 +171,8 @@ class PartnerStats(BaseModel):
 class DepartmentLawyersRanked(BaseModel):
     name: Optional[str] = Field(None, description="Full name of the lawyer.")
     comments_or_web_link: Optional[str] = Field(None, description="Include the bio URL or specific comments/key areas of focus listed for this lawyer.")
-    is_partner: Optional[str] = Field(
-        None, 
-        description="Evaluate if they are a partner based on the text. You MUST output exactly 'Y' or 'N'. Do not include any other words, explanations, or parentheses."
-    )
-    is_ranked: Optional[str] = Field(
-        None, 
-        description="Evaluate if they are already ranked based on the text. You MUST output exactly 'Y' or 'N'. Do not include any other words, explanations, or parentheses."
-    )
+    is_partner: Optional[str] = Field(None, description="Evaluate if they are a partner based on the text. You MUST output exactly 'Y' or 'N'.")
+    is_ranked: Optional[str] = Field(None, description="Evaluate if they are already ranked based on the text. You MUST output exactly 'Y' or 'N'.")
     parental_leave_or_part_time: Optional[str] = Field(None, description="Details regarding parental leave or part-time arrangements. Return null if blank.")
 
 class HireDeparture(BaseModel):
@@ -165,6 +192,9 @@ class DepartmentInfoFeature(BaseModel):
     B9_lawyers_ranked_unranked: List[DepartmentLawyersRanked] = Field(default_factory=list, description="Details regarding ranked and unranked lawyers, including their key areas of focus and standout work.")
     B10_department_best_known_for: Optional[str] = Field(None, description="A narrative summary of what the department is best known for. Include industry sector expertise, recent growth, and market disruptor status. Extract the full block of text.")
 
+# -----------------------------------
+# Section C: Feedback
+# -----------------------------------
 class BarristerAdvocate(BaseModel):
     name: Optional[str] = Field(None, description="Name of the barrister or advocate.")
     firm_set: Optional[str] = Field(None, description="The Firm or Set the barrister belongs to.")
@@ -174,6 +204,9 @@ class FeedbackFeature(BaseModel):
     C1_barristers_advocates: List[BarristerAdvocate] = Field(default_factory=list, description="List of external barristers or advocates used by the firm.")
     C2_feedback_on_other_firms: Optional[str] = Field(None, description="Feedback provided regarding other competing firms or the ranking status of their own lawyers. Return null if blank.")
 
+# -----------------------------------
+# Section D: Publishable Information
+# -----------------------------------
 class PublishableClient(BaseModel):
     name_of_client: Optional[str] = Field(None, description="The official name of the client.")
     is_new_client: Optional[bool] = Field(None, description="Determine if this is a new client within the last 12 months. Map 'Yes' to true, 'No' or blank to false.")
@@ -194,6 +227,9 @@ class PublishableInformationFeature(BaseModel):
     D0_publishable_clients_list: List[PublishableClient] = Field(default_factory=list, description="List of clients whose identities can be published. Exclude any client marked confidential.")
     publishable_matters: List[PublishableMatter] = Field(default_factory=list, description="List of up to 20 publishable work highlights. MUST NOT contain confidential data.")
 
+# -----------------------------------
+# Section E: Confidential Information
+# -----------------------------------
 class ConfidentialMatter(BaseModel):
     matter_id: Optional[str] = Field(None, description="The internal matter ID or sequential number (e.g., 'Confidential Matter 1').")
     E1_name_of_client: Optional[str] = Field(None, description="The name of the client. Treat this as strictly confidential.")
@@ -211,6 +247,9 @@ class ConfidentialInformationFeature(BaseModel):
     E0_confidential_clients_list: List[PublishableClient] = Field(default_factory=list, description="List of clients whose identities MUST remain strictly confidential.")
     confidential_matters: List[ConfidentialMatter] = Field(default_factory=list, description="List of confidential work highlights. These matters are protected and not for publication.")
 
+# -----------------------------------
+# Top-Level Document (Chambers)
+# -----------------------------------
 class ChambersSubmission(BaseSubmission):
     """
     Top-level schema for Chambers Global and Chambers USA submissions.
@@ -220,3 +259,108 @@ class ChambersSubmission(BaseSubmission):
     C_feedback: Optional[FeedbackFeature] = None
     D_publishable_information: Optional[PublishableInformationFeature] = None
     E_confidential_information: Optional[ConfidentialInformationFeature] = None
+
+# =====================================================================
+#
+#                         LEADERS LEAGUE SCHEMA
+#
+# =====================================================================
+
+# -----------------------------------
+# Firm Information (Leaders League)
+# -----------------------------------
+class FirmInformationLL(BaseModel):
+    firm_name: Optional[str] = Field(None, description="The official name of the firm.")
+    year_established: Optional[str] = Field(None, description="The year the firm was established.")
+    managing_partners: Optional[str] = Field(None, description="Name of the Managing Partner(s).")
+    marketing_bd_persons: Optional[str] = Field(None, description="Name of the person(s) in charge of Marketing/Business Development.")
+    list_of_offices: Optional[str] = Field(None, description="List of office locations.")
+    total_partners: Optional[int] = Field(None, description="Number of Partners in the entire firm.")
+    total_counsels_associates: Optional[int] = Field(None, description="Number of Counsels/Associates in the entire firm.")
+
+# -----------------------------------
+# Department Information (Leaders League)
+# -----------------------------------
+class DepartmentHeadLL(BaseModel):
+    name: Optional[str] = Field(None, description="Name of the head of the department or key partner.")
+    email: Optional[str] = Field(None, description="Email address.")
+    partner_since: Optional[str] = Field(None, description="The year they became a partner.")
+    specific_specialisms: Optional[str] = Field(None, description="Specific specialisms of the partner.")
+    dedicates_less_than_50_percent: Optional[bool] = Field(False, description="True if the partner dedicates less than 50% of their time to this department (needs to be highlighted in red).")
+
+class DepartmentChangeLL(BaseModel):
+    name: Optional[str] = Field(None, description="Name of the person.")
+    position: Optional[str] = Field(None, description="Position (e.g., Partner, Counsel, Associate).")
+    action: Optional[str] = Field(None, description="Action: Arrived, left, promoted, or retired.")
+    moved_to_from: Optional[str] = Field(None, description="Where they moved to or from.")
+    month_year: Optional[str] = Field(None, description="Month and year of the change.")
+
+class ActiveClientLL(BaseModel):
+    company: Optional[str] = Field(None, description="Name of the company/client.")
+    sector: Optional[str] = Field(None, description="Industry sector of the client.")
+    is_new_client: Optional[bool] = Field(False, description="True if it is a new client.")
+    is_confidential: Optional[bool] = Field(False, description="True if the client is confidential.")
+    type_of_work: Optional[str] = Field(None, description="Type of work performed for the client.")
+
+class DepartmentInformationLL(BaseModel):
+    partners_completing_form: Optional[str] = Field(None, description="Name of the Partner(s) in charge of completing this form.")
+    department_heads: List[DepartmentHeadLL] = Field(default_factory=list, description="List of Heads of the department and other key partners.")
+    composition_male_partners: Optional[int] = Field(None, description="Number of Male Partners in the department.")
+    composition_female_partners: Optional[int] = Field(None, description="Number of Female Partners in the department.")
+    composition_counsels_associates: Optional[int] = Field(None, description="Number of Counsels/Associates in the department.")
+    department_changes: List[DepartmentChangeLL] = Field(default_factory=list, description="Changes in the department over the last 12 months.")
+    best_known_for: Optional[str] = Field(None, description="Narrative on what the department is best known for (max 500 words).")
+    new_cases_last_12_months: Optional[str] = Field(None, description="Number of new cases taken on in the last 12 months.")
+    top_five_sectors: List[str] = Field(default_factory=list, max_length=5, description="Top five sectors the department works with.")
+    active_clients: List[ActiveClientLL] = Field(default_factory=list, max_length=30, description="List of active clients (up to 30).")
+
+# -----------------------------------
+# Peer Feedback (Leaders League)
+# -----------------------------------
+class EstablishedPractitionerLL(BaseModel):
+    firm_lawyer: Optional[str] = Field(None, description="Name of the leading firm or lawyer.")
+    comments: Optional[str] = Field(None, description="Comments supporting their leading status.")
+
+class RisingStarLL(BaseModel):
+    law_firm: Optional[str] = Field(None, description="Name of the rising star law firm.")
+    lawyers: Optional[str] = Field(None, description="Names of the rising star lawyers.")
+    main_specialty: Optional[str] = Field(None, description="Main specialty of the rising star.")
+
+class PeerFeedbackLL(BaseModel):
+    established_practitioners: List[EstablishedPractitionerLL] = Field(default_factory=list, description="Feedback on leading law firms/lawyers.")
+    rising_stars: List[RisingStarLL] = Field(default_factory=list, description="Feedback on rising stars in the practice.")
+
+# -----------------------------------
+# Ranking Feedback (Leaders League)
+# -----------------------------------
+class RankingFeedbackLL(BaseModel):
+    opinion_current_position: Optional[str] = Field(None, description="Opinion on the firm's current position in Leaders League ranking.")
+
+# -----------------------------------
+# Work Highlights (Leaders League)
+# -----------------------------------
+class WorkHighlightLL(BaseModel):
+    matter_name: Optional[str] = Field(None, description="Name of the Matter.")
+    is_confidential: Optional[bool] = Field(False, description="True if the matter is confidential.")
+    client: Optional[str] = Field(None, description="Name of the Client.")
+    matter_value: Optional[str] = Field(None, description="Value of the matter (specify currency) and/or other key numbers.")
+    matter_status: Optional[str] = Field(None, description="Status of the matter (closed in last year or ongoing).")
+    matter_context: Optional[str] = Field(None, description="Description of the context in which work was solicited.")
+    firm_role_output: Optional[str] = Field(None, description="Explanation of what the firm did and strategy used.")
+    lead_partners: Optional[str] = Field(None, description="Lead Partner(s) on the matter.")
+    other_team_members: Optional[str] = Field(None, description="Other team members involved.")
+    other_firms_advising: Optional[str] = Field(None, description="Other firms advising on the matter and their role.")
+    press_links: Optional[str] = Field(None, description="Links to press coverage.")
+
+# -----------------------------------
+# Top-Level Document (Leaders League)
+# -----------------------------------
+class LeadersLeagueSubmission(BaseSubmission):
+    """
+    Top-level schema for Leaders League submissions.
+    """
+    firm_information: Optional[FirmInformationLL] = None
+    department_information: Optional[DepartmentInformationLL] = None
+    peer_feedback: Optional[PeerFeedbackLL] = None
+    ranking_feedback: Optional[RankingFeedbackLL] = None
+    work_highlights: List[WorkHighlightLL] = Field(default_factory=list, max_length=10, description="Up to 10 work highlights.")

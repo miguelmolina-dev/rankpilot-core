@@ -1,0 +1,125 @@
+name: "Leaders League - Advertising & Marketing"
+target_submission_type: "LeadersLeague"
+
+required_fields:
+  # ==========================================
+  # 1. FIRM INFORMATION
+  # ==========================================
+  - field: "firm_information.firm_name"
+    description: "The official, registered name of the law firm."
+    
+  - field: "firm_information.year_established"
+    description: "The year the law firm was originally established."
+    
+  - field: "firm_information.managing_partners"
+    description: "The name(s) of the firm's Managing Partner(s)."
+    
+  - field: "firm_information.marketing_bd_persons"
+    description: "The primary contact person(s) in charge of Marketing and Business Development."
+    
+  - field: "firm_information.list_of_offices"
+    description: "A comprehensive list of all office locations."
+    
+  - field: "firm_information.total_partners"
+    description: "The total number of Partners across the entire firm."
+    
+  - field: "firm_information.total_counsels_associates"
+    description: "The total number of Counsels and Associates across the entire firm."
+
+  # ==========================================
+  # 2. DEPARTMENT INFORMATION
+  # ==========================================
+  - field: "department_information.partners_completing_form"
+    description: "The specific Partner(s) responsible for completing this submission form."
+    
+  - field: "department_information.composition_male_partners"
+    description: "The number of male partners in this specific department."
+    
+  - field: "department_information.composition_female_partners"
+    description: "The number of female partners in this specific department."
+    
+  - field: "department_information.composition_counsels_associates"
+    description: "The number of Counsels and Associates in this specific department."
+    
+  - field: "department_information.best_known_for"
+    description: "A 500-word narrative explaining specific expertise, types of mandates, industry sectors, and renowned practitioners the department is known for."
+    
+  - field: "department_information.new_cases_last_12_months"
+    description: "The total number of new cases this specific department took on in the last 12 months."
+
+  # Core Department Heads
+  - field: "department_information.department_heads.0.name"
+    description: "The name of the primary Head of the Department."
+    
+  - field: "department_information.department_heads.0.email"
+    description: "The direct email address of the primary Head of the Department."
+    
+  - field: "department_information.department_heads.0.specific_specialisms"
+    description: "The specific legal specialisms of the primary Head of the Department."
+
+  # Top 5 Sectors
+  - field: "department_information.top_five_sectors.0"
+    description: "The number one most important industry sector the department works with."
+  - field: "department_information.top_five_sectors.1"
+    description: "The second most important industry sector the department works with."
+  - field: "department_information.top_five_sectors.2"
+    description: "The third most important industry sector the department works with."
+  - field: "department_information.top_five_sectors.3"
+    description: "The fourth most important industry sector the department works with."
+  - field: "department_information.top_five_sectors.4"
+    description: "The fifth most important industry sector the department works with."
+
+  # Core Active Clients
+  - field: "department_information.active_clients.0.company"
+    description: "The name of the firm's most important active client."
+  - field: "department_information.active_clients.0.sector"
+    description: "The industry sector of the firm's most important active client."
+  - field: "department_information.active_clients.0.type_of_work"
+    description: "The type of work performed for the firm's most important active client."
+    
+  - field: "department_information.active_clients.1.company"
+    description: "The name of the firm's second most important active client."
+  - field: "department_information.active_clients.1.sector"
+    description: "The industry sector of the firm's second most important active client."
+    
+  - field: "department_information.active_clients.2.company"
+    description: "The name of the firm's third most important active client."
+  - field: "department_information.active_clients.2.sector"
+    description: "The industry sector of the firm's third most important active client."
+
+  # ==========================================
+  # 3. FEEDBACK
+  # ==========================================
+  - field: "peer_feedback.established_practitioners.0.firm_lawyer"
+    description: "The name of a leading competitor law firm or lawyer that the firm recommends."
+    
+  - field: "peer_feedback.rising_stars.0.law_firm"
+    description: "The name of a rising star law firm in this practice area."
+    
+  - field: "ranking_feedback.opinion_current_position"
+    description: "The firm's strategic opinion and argument regarding their current position in the Leaders League rankings."
+
+  # ==========================================
+  # 4. WORK HIGHLIGHTS
+  # ==========================================
+  - field: "work_highlights.0.matter_name"
+    description: "The title or name of the primary work highlight."
+  - field: "work_highlights.0.client"
+    description: "The client represented in the primary work highlight."
+  - field: "work_highlights.0.matter_context"
+    description: "The context detailing why the firm's work was solicited by the client for the primary work highlight."
+  - field: "work_highlights.0.firm_role_output"
+    description: "An explanation of what the firm did, the strategy used, and the obtained results for the primary work highlight."
+  - field: "work_highlights.0.lead_partners"
+    description: "The lead partner(s) involved in the primary work highlight."
+
+  - field: "work_highlights.1.matter_name"
+    description: "The title or name of the secondary work highlight."
+  - field: "work_highlights.1.client"
+    description: "The client represented in the secondary work highlight."
+  - field: "work_highlights.1.matter_context"
+    description: "The context detailing why the firm's work was solicited by the client for the secondary work highlight."
+  - field: "work_highlights.1.firm_role_output"
+    description: "An explanation of what the firm did, the strategy used, and the obtained results for the secondary work highlight."
+  - field: "work_highlights.1.lead_partners"
+    description: "The lead partner(s) involved in the secondary work highlight."

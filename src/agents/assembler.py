@@ -7,6 +7,7 @@ from src.strategies.legal500 import Legal500Strategy
 from src.strategies.chambers import ChambersStrategy
 from src.io.base64_encoder import encode_file_to_base64
 from src.io.text_enrichment import convert_all_markdown_to_richtext
+from src.strategies.leaders_league import LeadersLeagueStrategy
 
 def sanitize_filename(name: str) -> str:
     """Removes invalid characters to make the firm name safe for the file system."""
@@ -36,6 +37,8 @@ def assembly_node(state: AgentState) -> dict:
         strategy = Legal500Strategy()
     elif sub_type == "Chambers":
         strategy = ChambersStrategy()
+    elif sub_type == "LeadersLeague":
+        strategy = LeadersLeagueStrategy()
     else:
         # fallback
         strategy = Legal500Strategy()
