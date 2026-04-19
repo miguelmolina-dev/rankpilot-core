@@ -19,6 +19,11 @@ def classification_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "preparation", "messages": []}
 
+    # ==========================================
+    # LOG DE PRUEBA EXTREMA
+    # ==========================================
+    updates["messages"].append("ALERTA ROJA: ESTOY LEYENDO EL NUEVO CODIGO")
+
     decoded_file_paths = state.get("decoded_file_paths", []) or []
     b64_docs = state.get("base64_documents", [])
 
