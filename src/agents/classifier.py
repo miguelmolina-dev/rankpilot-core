@@ -19,11 +19,11 @@ def classification_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "preparation", "messages": []}
 
-    decoded_file_paths = getattr(state, "decoded_file_paths", []) or []
+    decoded_file_paths = state.get(state, "decoded_file_paths", []) or []
     b64_docs = state.get("base64_documents", [])
 
     # 1. Start the extracted_text with the raw text from Laravel!
-    raw_input_text = getattr(state, "raw_input_text", "") or ""
+    raw_input_text = state.get(state, "raw_input_text", "") or ""
     if raw_input_text.strip():
         updates["messages"].append("Preparation node: Successfully received raw text from Laravel.")
     extracted_text = raw_input_text
