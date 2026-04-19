@@ -127,6 +127,12 @@ def ingestion_node(state: AgentState) -> dict:
             updates["errors"] = (getattr(state, "errors") or []) + [str(e)]
 
     else:
-        updates["messages"].append("Ingestion node: No text found to extract.")
+        updates["messages"].append("Ingestion node: No text found to extract. Initializing empty schema.")
+        
+        # EL FIX: Forzar la inicialización del esquema vacío
+        if target_submission_type == "Legal500":
+            updates["submission"] = Legal500Submission()
+        else:
+            updates["submission"] = ChambersSubmission()
 
     return updates

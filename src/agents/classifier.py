@@ -6,6 +6,7 @@ from src.io.docx_manager import extract_text_from_docx
 from src.core.llm import get_llm
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
+import traceback
 
 class ClassificationResult(BaseModel):
     input_document_type: str = Field(description="The identified type of the document (e.g. 'Legal500', 'Chambers', 'Other').")
@@ -45,14 +46,47 @@ def classification_node(state: AgentState) -> dict:
     # 3. Extract text from documents and append it to the raw text
     for file_path in decoded_file_paths:
         if not file_path:
+            updates["messages"].append("Debug: file_path is empty or None.")
+            continue
+
+        updates["messages"].append(f"Debug: Starting extraction for file: {file_path}")
+
+        # Sospechoso 1 y 2: ¿El archivo realmente existe en el disco duro y tiene peso?
+        if not os.path.exists(file_path):
+            updates["messages"].append(f"Debug ERROR: The file does not exist on disk at {file_path}")
+            continue
+            
+        file_size = os.path.getsize(file_path)
+        updates["messages"].append(f"Debug: File size on disk is {file_size} bytes.")
+        
+        if file_size == 0:
+            updates["messages"].append("Debug ERROR: File is 0 bytes. Base64 decoding failed!")
             continue
 
         ext = os.path.splitext(file_path)[1].lower()
+        
         if ext == '.pdf':
-            text = extract_text_from_pdf(file_path)
-            if text:
-                extracted_text += f"\n--- Content from {os.path.basename(file_path)} ---\n{text}"
+            updates["messages"].append("Debug: Calling extract_text_from_pdf()...")
+            try:
+                # Sospechoso 3: Capturamos cualquier error interno de tu pdf_parser
+                text = extract_text_from_pdf(file_path)
+                
+                # Sospechoso 4: Verificamos qué demonios nos devolvió la función
+                if text is None:
+                    updates["messages"].append("Debug WARNING: extract_text_from_pdf returned None.")
+                elif text.strip() == "":
+                    updates["messages"].append("Debug WARNING: extract_text_from_pdf returned an empty string. Is it a scanned PDF (image)?")
+                else:
+                    updates["messages"].append(f"Debug SUCCESS: Extracted {len(text)} characters from PDF.")
+                    extracted_text += f"\n--- Content from {os.path.basename(file_path)} ---\n{text}"
+                    
+            except Exception as e:
+                error_trace = traceback.format_exc()
+                updates["messages"].append(f"Debug EXCEPTION in extract_text_from_pdf: {str(e)}")
+                print(f"Detailed Error: {error_trace}") # Esto saldrá en la terminal de Python
+
         elif ext == '.docx':
+            # Puedes hacer lo mismo para docx si quieres
             text = extract_text_from_docx(file_path)
             if text:
                 extracted_text += f"\n--- Content from {os.path.basename(file_path)} ---\n{text}"
