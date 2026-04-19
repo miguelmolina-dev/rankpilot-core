@@ -2,8 +2,7 @@ import os
 import sys
 import argparse
 import base64
-from fastapi.testclient import TestClient
-from main import api
+import requests
 
 def main():
     parser = argparse.ArgumentParser(description="RankPilot Stateless Frontend Simulation")
@@ -14,7 +13,7 @@ def main():
         print(f"Error: File not found at {args.filepath}")
         sys.exit(1)
 
-    print("--- RankPilot Stateless Frontend Simulation (Laravel style) ---")
+    print("--- RankPilot Stateless Frontend Simulation (Laravel style via REAL HTTP) ---")
 
     # Read the file and base64 encode it
     with open(args.filepath, "rb") as f:
@@ -22,10 +21,10 @@ def main():
     b64_string = base64.b64encode(file_content).decode('utf-8')
     filename = os.path.basename(args.filepath)
 
-    # Initialize TestClient
-    client = TestClient(api)
+    # ¡NUEVO! Set the real API URL
+    API_URL = "http://localhost:8000/process"
 
-    print(f"\n[Frontend] Uploading initial document: {filename}...")
+    print(f"\n[Frontend] Uploading initial document: {filename} to {API_URL}...")
 
     # Initial state mimicking what Laravel would send to initiate
     current_state = {
@@ -60,14 +59,19 @@ def main():
         "errors": []
     }
 
-    # ¡NUEVO! Envolvemos exactamente como lo hace Laravel
+    # Envolvemos exactamente como lo hace Laravel
     payload = {
-        "thread_id": "sim_123",
+        "thread_id": "sim_real_http_123",
         "agent_state": current_state
     }
 
-    # First request
-    response = client.post("/process", json=payload)
+    # First request using REAL HTTP POST
+    try:
+        response = requests.post(API_URL, json=payload)
+    except requests.exceptions.ConnectionError:
+        print(f"Error: Could not connect to {API_URL}. Is your Uvicorn server running?")
+        return
+
     if response.status_code != 200:
         print(f"Error from API: {response.status_code} - {response.text[:500]}... [TEXTO TRUNCADO]")
         return
@@ -80,7 +84,6 @@ def main():
         print(f"   [Backend Log]: {msg}")
 
     # Now, enter the interactive loop
-    # We continue until there are no more gaps and we have an output base64
     max_iterations = 10
     iteration = 0
     while current_state.get("gaps", []) and iteration < max_iterations:
@@ -88,7 +91,6 @@ def main():
         gaps = current_state.get("gaps", [])
         print(f"\n[Frontend] Remaining Gaps: {len(gaps)} (Iteration {iteration}/{max_iterations})")
 
-        # In this workflow, if there are gaps, the backend generates one question at a time
         new_answer = current_state.get("new_answer", {})
         question_text = new_answer.get("question_text")
 
@@ -96,7 +98,6 @@ def main():
             print(f"\n--- Question from Agent ---")
             print(f"Q: {question_text}")
 
-            # Simulate asking user
             try:
                 answer = input("Your answer (or press Enter to skip/mock): ")
                 if not answer.strip():
@@ -110,19 +111,21 @@ def main():
             # Set the answer in the state payload
             current_state["new_answer"]["answer"] = answer
 
-            # Send the entire updated state back to the API
             print("[Frontend] Sending updated state back to /process endpoint...")
 
-            # Clear previous messages so we only see new ones
             current_state["messages"] = []
 
-            # ¡NUEVO! Volvemos a envolver antes de disparar
             payload = {
-                "thread_id": "sim_123",
+                "thread_id": "sim_real_http_123",
                 "agent_state": current_state
             }
 
-            response = client.post("/process", json=payload)
+            try:
+                response = requests.post(API_URL, json=payload)
+            except requests.exceptions.ConnectionError:
+                print(f"Error: Connection lost to {API_URL}.")
+                return
+
             if response.status_code != 200:
                 print(f"Error from API: {response.status_code} - {response.text[:500]}... [TEXTO TRUNCADO]")
                 return
@@ -133,7 +136,6 @@ def main():
             for msg in current_state.get("messages", []):
                 print(f"   [Backend Log]: {msg}")
         else:
-            # If there are gaps but no question was generated, something might be wrong or it needs a different mechanism
             print("Gaps exist but no question was generated. Exiting loop.")
             break
 
@@ -152,7 +154,6 @@ def main():
 
     print("\n--- Final Submission Data ---")
     
-    # Eliminamos el base64 de la memoria antes de imprimir toda la estructura
     if current_state.get("base64_documents"):
         current_state["base64_documents"] = "[BASE64 DATA OMITTED FOR TERMINAL]"
         
