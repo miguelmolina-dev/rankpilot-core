@@ -29,11 +29,12 @@ class AgentState(BaseModel):
     # History of Q&A interactions with Laravel
     history: List[str] = Field(default_factory=list)
 
-    # --- NEW: Accept raw text directly from the Laravel UI ---
+    # --- RAW TEXT INPUT ---
     raw_input_text: str = ""
 
-    # Current question and incoming answer from Laravel
-    new_answer: Dict[str, str] = Field(default_factory=dict)
+    # --- FIX: Flexibilidad total para Laravel ---
+    # Cambiamos Dict[str, str] por Dict[str, Any] para atrapar nulls antes de que explote
+    new_answer: Dict[str, Any] = Field(default_factory=dict)
 
     # Base64 output representation of the final document
     output_base64: Optional[str] = None
@@ -44,52 +45,54 @@ class AgentState(BaseModel):
     extracted_text: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
     
-    # --- NEW: Track fields the user explicitly skipped or doesn't have ---
+    # Track fields the user explicitly skipped
     dismissed_gaps: List[str] = Field(default_factory=list)
 
     # ==========================================
-    # NEW: The Sanitization Bouncer
+    # VALIDADOR: NORMALIZAR TIPO DE SUBMISSION
     # ==========================================
     @field_validator("target_submission_type", mode="before")
     @classmethod
     def normalize_submission_type(cls, value: Optional[str]) -> Optional[str]:
-        """
-        Intercepts the incoming string from Laravel and aggressively cleans it.
-        Converts 'Legal 500', 'Legal-500', 'legal_500' -> 'Legal500'
-        """
         if not value:
             return value
-            
-        # 1. Convert to lowercase and strip out all spaces, hyphens, and underscores
         cleaned = value.lower().replace(" ", "").replace("-", "").replace("_", "")
-        
-        # 2. Force it into the exact official formats
         if "legal" in cleaned and "500" in cleaned:
             return "Legal500"
         if "chambers" in cleaned:
             return "Chambers"
-            
-        # If it's something entirely different, return it capitalized just in case
         return value.capitalize()
     
     # ==========================================
-    # ESCUDO ANTI-PHP (Sanitization Bouncer)
+    # VALIDADOR: ESCUDO ANTI-PHP PARA SUBMISSION
     # ==========================================
     @field_validator("submission", mode="before")
     @classmethod
     def sanitize_php_garbage(cls, v: Optional[Any]) -> Optional[Any]:
-        """
-        Intercepta el payload de Laravel y destruye la basura de 'stdClass'
-        antes de que Pydantic explote con un Error 500.
-        """
         if isinstance(v, dict):
-            # Estos son los 3 campos que Laravel siempre envía sucios
             buggy_fields = ["narratives", "individual_nominations", "team_dynamics"]
-            
             for field in buggy_fields:
-                # Si el campo viene de Laravel, es un diccionario y trae la basura "stdClass"...
                 if field in v and isinstance(v[field], dict) and "stdClass" in v[field]:
-                    # ...lo purificamos a un diccionario vacío puro de Python
                     v[field] = {}
-                    
         return v
+
+    # ==========================================
+    # NEW: ESCUDO PARA NEW_ANSWER (The Null Killer)
+    # ==========================================
+    @field_validator("new_answer", mode="before")
+    @classmethod
+    def sanitize_new_answer(cls, v: Any) -> Dict[str, str]:
+        """
+        Si Laravel manda null en target_field, question_text o answer,
+        lo convertimos en "" para que Pydantic no llore.
+        """
+        default = {"target_field": "", "question_text": "", "answer": ""}
+        
+        if not isinstance(v, dict):
+            return default
+            
+        return {
+            "target_field": str(v.get("target_field") or ""),
+            "question_text": str(v.get("question_text") or ""),
+            "answer": str(v.get("answer") or "")
+        }
