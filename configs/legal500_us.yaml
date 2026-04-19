@@ -4,25 +4,23 @@ name: "Legal500 US Complete"
 # having them in this required list will force the Interrogator to ask about them. 
 # You can remove them from this list if you want them to be strictly optional.
 required_fields:
-  - "firm_name"
-  - "country"
-  - "practice_area"
-  - "interview_contacts"
-  - "team_name_internal"
-  - "heads_of_team"
-  - "partners_count_50_percent_plus"
-  - "non_partners_count_50_percent_plus"
-  - "what_sets_us_apart"
-  - "initiatives_and_innovation"
-  - "rankings_feedback"
-  - "active_key_client"
-  - "leading_partners"
-  - "next_generation_partners"
-  - "leading_associates"
-  - "arrivals_and_departures"
-  - "work_highlights_summaries"
-  - "matters"
-
+  # Identity
+  - "identity.firm_name"
+  - "identity.country"
+  - "identity.practice_area"
+  
+  # Department Info
+  - "department_info.team_name_internal"
+  - "department_info.metrics.partners_count_50_percent_plus"
+  
+  # Narratives
+  - "narratives.what_sets_us_apart"
+  - "narratives.initiatives_and_innovation"
+  - "narratives.rankings_feedback"
+  
+  # Listas (puedes pedir el primer elemento para validar que no esté vacía)
+  - "clients.0.active_key_client"
+  - "matters.0.matter_description"
 fields:
   firm_name:
     description: "The official name of the law firm."
