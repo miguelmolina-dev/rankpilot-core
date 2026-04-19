@@ -19,17 +19,14 @@ def classification_node(state: AgentState) -> dict:
     """
     updates = {"current_step": "preparation", "messages": []}
 
-    decoded_file_paths = state.get(state, "decoded_file_paths", []) or []
+    decoded_file_paths = state.get("decoded_file_paths", []) or []
     b64_docs = state.get("base64_documents", [])
 
     # 1. Start the extracted_text with the raw text from Laravel!
-    raw_input_text = state.get(state, "raw_input_text", "") or ""
+    raw_input_text = state.get("raw_input_text", "") or ""
     if raw_input_text.strip():
         updates["messages"].append("Preparation node: Successfully received raw text from Laravel.")
     extracted_text = raw_input_text
-
-    if raw_input_text.strip():
-        updates["messages"].append("Preparation node: Successfully received raw text from Laravel.")
 
     # 2. Decode Base64 documents to the hard drive
     if b64_docs:
