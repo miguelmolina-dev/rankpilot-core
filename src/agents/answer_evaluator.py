@@ -6,10 +6,18 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 
 class AnswerIntent(BaseModel):
-    action: str = Field(description="Must be 'fill' if the user provided valid data, or 'dismiss' if the user wants to skip.")
+    action: str = Field(
+        description="Must be 'fill' if the user provided valid data, or 'dismiss' if the user wants to skip."
+    )
     extracted_value: Union[List[Dict[str, Any]], Dict[str, Any], str] = Field(
         description="The formatted data. Must exactly match the target field's expected format."
     )
+
+    # ==========================================
+    # EL FIX PARA EL LLM (OpenAI/Gemini Strict)
+    # ==========================================
+    class Config:
+        extra = "forbid"
 
 def process_answer_node(state: AgentState) -> dict:
     updates = {"messages": []}
