@@ -71,3 +71,25 @@ class AgentState(BaseModel):
             
         # If it's something entirely different, return it capitalized just in case
         return value.capitalize()
+    
+    # ==========================================
+    # ESCUDO ANTI-PHP (Sanitization Bouncer)
+    # ==========================================
+    @field_validator("submission", mode="before")
+    @classmethod
+    def sanitize_php_garbage(cls, v: Optional[Any]) -> Optional[Any]:
+        """
+        Intercepta el payload de Laravel y destruye la basura de 'stdClass'
+        antes de que Pydantic explote con un Error 500.
+        """
+        if isinstance(v, dict):
+            # Estos son los 3 campos que Laravel siempre envía sucios
+            buggy_fields = ["narratives", "individual_nominations", "team_dynamics"]
+            
+            for field in buggy_fields:
+                # Si el campo viene de Laravel, es un diccionario y trae la basura "stdClass"...
+                if field in v and isinstance(v[field], dict) and "stdClass" in v[field]:
+                    # ...lo purificamos a un diccionario vacío puro de Python
+                    v[field] = {}
+                    
+        return v
