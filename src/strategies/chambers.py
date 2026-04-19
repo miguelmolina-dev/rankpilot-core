@@ -9,7 +9,7 @@ class ChambersStrategy(SubmissionStrategy):
     Config-driven based on YAML definitions.
     """
 
-    def __init__(self, config_path: str = "configs/chambers_global.yaml"):
+    def __init__(self, config_path: str = "configs/chambers.yaml"):
         self.config_path = config_path
         self._load_config()
 
