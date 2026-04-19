@@ -32,22 +32,44 @@ def main():
         "base64_documents": [{"filename": filename, "base64": b64_string}],
         "decoded_file_paths": [],
         "target_submission_type": "Legal500",
-        "input_document_type": None,
-        "submission": None,
+        "input_document_type": "pdf",
+        "submission": {
+            "identity": {
+                "firm_name": None,
+                "country": None,
+                "practice_area": None,
+                "interview_contacts": []
+            },
+            "department_info": {},
+            "narratives": {},
+            "clients": [],
+            "individual_nominations": {},
+            "team_dynamics": {},
+            "work_highlights_summaries": [],
+            "matters": []
+        },
         "gaps": [],
+        "dismissed_gaps": [],
         "questions": [],
         "history": [],
-        "new_answer": {"question_text": "", "answer": ""},
+        "raw_input_text": "",
+        "new_answer": {}, 
         "output_base64": None,
         "messages": [],
         "current_step": "init",
         "errors": []
     }
 
+    # ¡NUEVO! Envolvemos exactamente como lo hace Laravel
+    payload = {
+        "thread_id": "sim_123",
+        "agent_state": current_state
+    }
+
     # First request
-    response = client.post("/process", json=current_state)
+    response = client.post("/process", json=payload)
     if response.status_code != 200:
-        print(f"Error from API: {response.status_code} - {response.text}")
+        print(f"Error from API: {response.status_code} - {response.text[:500]}... [TEXTO TRUNCADO]")
         return
 
     current_state = response.json()
@@ -94,9 +116,15 @@ def main():
             # Clear previous messages so we only see new ones
             current_state["messages"] = []
 
-            response = client.post("/process", json=current_state)
+            # ¡NUEVO! Volvemos a envolver antes de disparar
+            payload = {
+                "thread_id": "sim_123",
+                "agent_state": current_state
+            }
+
+            response = client.post("/process", json=payload)
             if response.status_code != 200:
-                print(f"Error from API: {response.status_code} - {response.text}")
+                print(f"Error from API: {response.status_code} - {response.text[:500]}... [TEXTO TRUNCADO]")
                 return
 
             current_state = response.json()
@@ -123,7 +151,12 @@ def main():
         print("\nNo output base64 found in the final state. Assembly might have failed.")
 
     print("\n--- Final Submission Data ---")
-    print(current_state.get("submission"))
+    
+    # Eliminamos el base64 de la memoria antes de imprimir toda la estructura
+    if current_state.get("base64_documents"):
+        current_state["base64_documents"] = "[BASE64 DATA OMITTED FOR TERMINAL]"
+        
+    print(current_state)
     print("-----------------------------\n")
 
 if __name__ == "__main__":
