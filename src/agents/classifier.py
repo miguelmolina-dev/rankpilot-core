@@ -20,10 +20,12 @@ def classification_node(state: AgentState) -> dict:
     updates = {"current_step": "preparation", "messages": []}
 
     decoded_file_paths = getattr(state, "decoded_file_paths", []) or []
-    b64_docs = getattr(state, "base64_documents", [])
+    b64_docs = state.get("base64_documents", [])
 
     # 1. Start the extracted_text with the raw text from Laravel!
     raw_input_text = getattr(state, "raw_input_text", "") or ""
+    if raw_input_text.strip():
+        updates["messages"].append("Preparation node: Successfully received raw text from Laravel.")
     extracted_text = raw_input_text
 
     if raw_input_text.strip():
@@ -96,12 +98,17 @@ def classification_node(state: AgentState) -> dict:
     updates["extracted_text"] = extracted_text
 
     # Trust Laravel's input for the document type
-    current_target = getattr(state, "target_submission_type", None)
+    current_target = state.get("target_submission_type", None)
+    if current_target:
+        current_target = current_target.replace(" ", "")
+
     if not current_target:
-        updates["target_submission_type"] = "Legal500"
+        current_target = "Legal500"
         updates["messages"].append("Preparation node: No target_submission_type provided. Defaulting to Legal500.")
-        
-    input_doc_type = getattr(state, "input_document_type", None)
+    
+    updates["target_submission_type"] = current_target
+    
+    input_doc_type = state.get("input_document_type", None)
     if not input_doc_type:
         updates["input_document_type"] = "text"
 
