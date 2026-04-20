@@ -22,35 +22,43 @@ class Legal500Strategy(SubmissionStrategy):
 
     def audit(self, submission_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
-        Runs the Gap Analysis to compare the current JSON state against the
-        flat 'Ideal Schema' defined in the YAML.
+        Runs the Gap Analysis.
+        Soporta rutas de punto (dot-notation) para validar campos anidados.
         """
         required_fields = self.config.get("required_fields", [])
-        
-        # Helper function to recursively find all keys that actually have data
-        def get_all_populated_keys(data):
-            populated = set()
-            if isinstance(data, dict):
-                for k, v in data.items():
-                    # If the value is not None, not an empty string, and not an empty list
-                    if v not in [None, "", []]:
-                        populated.add(k)
-                        populated.update(get_all_populated_keys(v))
-            elif isinstance(data, list):
-                for item in data:
-                    populated.update(get_all_populated_keys(item))
-            return populated
-
-        # Get every key inside the nested Pydantic dump that contains actual data
-        populated_keys = get_all_populated_keys(submission_data)
-        
         gaps = []
-        for field in required_fields:
-            if field not in populated_keys:
-                # Pull the specific description from the YAML to help the Interrogator LLM
-                reason = self.config.get("fields", {}).get(field, {}).get("description", f"Missing {field}.")
+
+        # Helper para navegar por rutas anidadas (ej. identity.firm_name)
+        def get_nested_value(data, path):
+            keys = path.split('.')
+            curr = data
+            try:
+                for k in keys:
+                    if isinstance(curr, dict):
+                        curr = curr.get(k)
+                    elif isinstance(curr, list) and k.isdigit():
+                        curr = curr[int(k)]
+                    else:
+                        return None
+                return curr
+            except (KeyError, IndexError, TypeError):
+                return None
+
+        for field_path in required_fields:
+            val = get_nested_value(submission_data, field_path)
+            
+            # Si el valor no existe o está vacío (None, "", [])
+            if val in [None, "", []]:
+                # Buscamos la descripción amigable en el YAML
+                reason = self.config.get("fields", {}).get(field_path, {}).get("description")
+                
+                # Si no hay descripción específica, generamos una automática
+                if not reason:
+                    friendly_name = field_path.split('.')[-1].replace("_", " ").title()
+                    reason = f"Please provide information for {friendly_name}."
+                
                 gaps.append({
-                    "field": field, 
+                    "field": field_path, 
                     "reason": reason
                 })
                 
