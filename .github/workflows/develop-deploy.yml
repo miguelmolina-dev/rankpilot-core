@@ -19,10 +19,10 @@ jobs:
           # key: ${{ secrets.SSH_KEY }}
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
-          script: |            
-            cd ${{ secrets.APP_DIR }}
-            git checkout develop
-            git pull origin develop
-            cd ${{ secrets.APP_DIR_BASE }}
-            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
-            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
+          # script: |            
+            # cd ${{ secrets.APP_DIR }}
+            #git checkout develop
+            # git pull origin develop
+            # cd ${{ secrets.APP_DIR_BASE }}
+            # sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
+            # sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
