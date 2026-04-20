@@ -2,7 +2,6 @@ name: Deploy Develop
 on:
   push:
     branches:
-      - main
       - develop
 jobs:
   build:
@@ -11,18 +10,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      # - name: Execute remote SSH commands using password
-        # uses: appleboy/ssh-action@v1
-        # with:
-          # host: ${{ secrets.HOST }}
-          # username: ${{ secrets.USERNAME }}
-          # # key: ${{ secrets.SSH_KEY }}
-          # password: ${{ secrets.PASSWORD }}
-          # port: ${{ secrets.PORT }}
-          # script: |            
-            # cd ${{ secrets.APP_DIR }}
-            #git checkout develop
-            # git pull origin develop
-            # cd ${{ secrets.APP_DIR_BASE }}
-            # sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
-            # sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
+      - name: Execute remote SSH commands using password
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          # key: ${{ secrets.SSH_KEY }}
+          password: ${{ secrets.PASSWORD }}
+          port: ${{ secrets.PORT }}
+          script: |            
+            cd ${{ secrets.APP_DIR }}
+            git checkout develop
+            git pull origin develop
+            cd ${{ secrets.APP_DIR_BASE }}
+            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
+            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
