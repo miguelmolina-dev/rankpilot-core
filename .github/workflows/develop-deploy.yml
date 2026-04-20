@@ -11,14 +11,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
-      - name: Execute remote SSH commands using password
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          # key: ${{ secrets.SSH_KEY }}
-          password: ${{ secrets.PASSWORD }}
-          port: ${{ secrets.PORT }}
+      # - name: Execute remote SSH commands using password
+        # uses: appleboy/ssh-action@v1
+        # with:
+          # host: ${{ secrets.HOST }}
+          # username: ${{ secrets.USERNAME }}
+          # # key: ${{ secrets.SSH_KEY }}
+          # password: ${{ secrets.PASSWORD }}
+          # port: ${{ secrets.PORT }}
           # script: |            
             # cd ${{ secrets.APP_DIR }}
             #git checkout develop
