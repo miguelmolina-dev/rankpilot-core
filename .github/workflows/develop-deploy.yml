@@ -19,10 +19,16 @@ jobs:
           # key: ${{ secrets.SSH_KEY }}
           password: ${{ secrets.PASSWORD }}
           port: ${{ secrets.PORT }}
-          script: |            
+          script: |
+            echo "Step 1"
             cd ${{ secrets.APP_DIR }}
+            echo "Step 2"
             git checkout develop
+            echo "Step 3"
             git pull origin develop
+            echo "Step 4"
             cd ${{ secrets.APP_DIR_BASE }}
+            echo "Step 5"
             sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
+            echo "Step 6"
             sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
