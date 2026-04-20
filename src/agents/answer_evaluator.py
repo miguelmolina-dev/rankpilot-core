@@ -25,31 +25,39 @@ def update_nested_field(data, target, new_value):
         keys = target.split('.')
         current = data
         try:
-            for key in keys[:-1]:
-                # --- ESTE ES EL FIX ---
-                # Si el nodo padre es None o no existe, lo creamos como un dict vacío
-                if key not in current or current[key] is None:
-                    current[key] = {}
+            for i, key in enumerate(keys[:-1]):
+                next_key = keys[i + 1]
                 
-                if key.isdigit():
-                    key = int(key)
-                current = current[key]
+                # 1. SI LA LLAVE NO EXISTE O ES NULL, LA INICIALIZAMOS
+                if isinstance(current, dict):
+                    if key not in current or current[key] is None:
+                        # Si el siguiente paso es un número, creamos una LISTA
+                        current[key] = [] if next_key.isdigit() else {}
+                    
+                    # Convertimos a entero si es un índice
+                    actual_key = int(key) if key.isdigit() else key
+                    current = current[actual_key]
+                
+                elif isinstance(current, list):
+                    idx = int(key)
+                    # Si la lista es más corta que el índice, la extendemos
+                    while len(current) <= idx:
+                        current.append({} if not next_key.isdigit() else [])
+                    current = current[idx]
             
-            final_key = keys[-1]
-            if final_key.isdigit():
-                final_key = int(final_key)
+            # 2. INYECCIÓN DEL VALOR FINAL
+            final_key = int(keys[-1]) if keys[-1].isdigit() else keys[-1]
             
-            # Lógica de inyección (igual a la anterior)
-            if isinstance(current, dict) and final_key in current and isinstance(current[final_key], list):
-                if isinstance(new_value, list):
-                    current[final_key].extend(new_value)
-                else:
-                    current[final_key].append(new_value)
-            else:
+            if isinstance(current, dict):
                 current[final_key] = new_value
+            elif isinstance(current, list):
+                idx = int(final_key)
+                while len(current) <= idx:
+                    current.append(None)
+                current[idx] = new_value
+                
             return True
         except (KeyError, IndexError, TypeError) as e:
-            # Puedes imprimir el error e aquí para más debug si fuera necesario
             return False
     else:
         if target in data:
