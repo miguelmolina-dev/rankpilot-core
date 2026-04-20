@@ -26,6 +26,11 @@ def update_nested_field(data, target, new_value):
         current = data
         try:
             for key in keys[:-1]:
+                # --- ESTE ES EL FIX ---
+                # Si el nodo padre es None o no existe, lo creamos como un dict vacío
+                if key not in current or current[key] is None:
+                    current[key] = {}
+                
                 if key.isdigit():
                     key = int(key)
                 current = current[key]
@@ -34,6 +39,7 @@ def update_nested_field(data, target, new_value):
             if final_key.isdigit():
                 final_key = int(final_key)
             
+            # Lógica de inyección (igual a la anterior)
             if isinstance(current, dict) and final_key in current and isinstance(current[final_key], list):
                 if isinstance(new_value, list):
                     current[final_key].extend(new_value)
@@ -42,7 +48,8 @@ def update_nested_field(data, target, new_value):
             else:
                 current[final_key] = new_value
             return True
-        except (KeyError, IndexError, TypeError):
+        except (KeyError, IndexError, TypeError) as e:
+            # Puedes imprimir el error e aquí para más debug si fuera necesario
             return False
     else:
         if target in data:
