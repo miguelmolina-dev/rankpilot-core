@@ -127,16 +127,28 @@ def process_answer_node(state: AgentState) -> dict:
                     updates["messages"].append("DEBUG: El valor fue procesado como string simple.")
 
                 # LLAMADA A LA FUNCIÓN (Ahora sí existe)
-                success = update_nested_field(sub_dict, target_field, val_to_inject)
+                try:
+                    # 1. Intentamos actualizar el diccionario
+                    success = update_nested_field(sub_dict, target_field, val_to_inject)
+                    
+                    if success:
+                        # 2. Intentamos validar el modelo completo
+                        try:
+                            updates["submission"] = type(submission)(**sub_dict)
+                            updates["messages"].append(f"SUCCESS: Field '{target_field}' updated.")
+                        except ValidationError as e:
+                            # SI FALLA LA VALIDACIÓN, NO PARAMOS EL SISTEMA
+                            # Guardamos el dato como un diccionario simple para no perder el progreso
+                            updates["submission"] = sub_dict 
+                            updates["messages"].append(f"WARNING: Type mismatch in '{target_field}', stored as raw data.")
+                    else:
+                        updates["messages"].append(f"ERROR: Path '{target_field}' not found.")
+
+                except Exception as e:
+                    # ESCUDO FINAL: Si algo sale muy mal, notificamos y limpiamos para que el usuario pueda reintentar
+                    updates["messages"].append(f"CRITICAL ERROR: {str(e)}")
+                    updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
                 
-                if success:
-                    try:
-                        updates["submission"] = type(submission)(**sub_dict)
-                        updates["messages"].append(f"Answer Evaluator: Successfully filled '{target_field}'.")
-                    except ValidationError as e:
-                        updates["messages"].append(f"Answer Evaluator Error: Pydantic rejected the AI's format. Error: {e}")
-                else:
-                    updates["messages"].append(f"Answer Evaluator Error: Could not locate '{target_field}' in the schema.")
             else:
                  updates["messages"].append("Answer Evaluator Error: No submission object exists.")
 
