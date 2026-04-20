@@ -1,5 +1,5 @@
 import json
-from typing import Any, Union, List, Dict
+from typing import Any, Union, List, Dict, Optional
 from pydantic import BaseModel, Field, ValidationError
 from src.core.llm import get_llm
 from langchain_core.prompts import ChatPromptTemplate
@@ -9,15 +9,17 @@ class AnswerIntent(BaseModel):
     action: str = Field(
         description="Must be 'fill' if the user provided valid data, or 'dismiss' if the user wants to skip."
     )
-    extracted_value: Union[List[Dict[str, Any]], Dict[str, Any], str] = Field(
+    # Definimos los tipos permitidos de forma explícita para evitar ambigüedad en el esquema JSON
+    extracted_value: Union[List[Dict[str, Any]], Dict[str, Any], str, int, float, bool, None] = Field(
         description="The formatted data. Must exactly match the target field's expected format."
     )
 
     # ==========================================
-    # EL FIX PARA EL LLM (OpenAI/Gemini Strict)
+    # FIX CRÍTICO: Configuración para Structured Outputs
     # ==========================================
     class Config:
-        extra = "forbid"
+        extra = "forbid"  # Obliga a additionalProperties: false
+        arbitrary_types_allowed = True
 
 def process_answer_node(state: AgentState) -> dict:
     updates = {"messages": []}
