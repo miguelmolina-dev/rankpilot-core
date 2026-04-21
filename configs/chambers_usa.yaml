@@ -9,20 +9,6 @@ name: "Chambers - USA"
 target_submission_type: "Chambers"
 template_file: "USA_Chambers_submission_form_template.docx"
 
-copywriting_guidelines: |
-  CRITICAL CHAMBERS EDITORIAL RULES:
-  You are writing for Chambers and Partners researchers, who are highly qualitative, critical, and conservative. You must adhere to the following unwritten rules:
-  
-  1. STRICTLY NO OVERCLAIMING: Never use inflated marketing hyperbole. Do NOT use phrases like "undisputed leader," "top firm," "absolute reference," or "best-in-class." Chambers actively punishes narrative inflation. Rely on objective, concrete facts to prove excellence.
-  2. ESTABLISH COMPETITIVE IDENTITY: Do not just list legal tasks. Explicitly articulate *why* this practice matters, its real market strength, the specific types of complex mandates where it shines, and what makes it fundamentally distinct from competitors.
-  3. MAINTAIN EDITORIAL COHERENCE: Ensure the narrative seamlessly connects the matters, the team structure, and the firm's market position. The pitch must perfectly match the evidence provided in the work highlights.
-  4. HIGHLIGHT BENCH DEPTH (HUMAN STRUCTURE): Whenever possible, emphasize the stability, continuity, and depth of the entire team. Highlight the involvement of next-generation partners and senior associates to prove institutional solidity, rather than focusing solely on one star partner.
-  5. SUBTLETY OVER HYPERBOLE: Tolerate ambition, but prove it through nuances, consistency, and fine signals rather than rigid boasting.
-
-name: "Chambers - USA"
-target_submission_type: "Chambers"
-template_file: "USA_Chambers_submission_form_template.docx"
-
 # ==========================================
 # THE CHAMBERS EDITORIAL AI BRAIN
 # ==========================================

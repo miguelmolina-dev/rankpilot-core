@@ -1,15 +1,14 @@
 import json
-from typing import Any, Union, List, Dict, Optional
+from typing import Any, Union, List, Dict, Optional, Literal
 from pydantic import BaseModel, Field, ValidationError
 from src.core.llm import get_llm
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 
 class AnswerIntent(BaseModel):
-    action: str = Field(
+    action: Literal["fill", "dismiss"] = Field(
         description="Must be 'fill' if the user provided valid data, or 'dismiss' if the user wants to skip."
     )
-    # Cambiamos a str para evitar el error 400 de esquemas complejos del LLM
     extracted_value: str = Field(
         description="The extracted data. If it's a list or object, provide it as a valid JSON string. If it's a simple text, just the text."
     )
@@ -95,30 +94,64 @@ def process_answer_node(state: AgentState) -> dict:
         llm = get_llm(temperature=0)
         structured_llm = llm.with_structured_output(AnswerIntent)
         
+        # --- MEJORA DEL PROMPT ---
+        system_prompt = (
+            "You are an expert data extraction AI evaluating a user's answer for a legal directory submission.\n"
+            "Your goal is to extract the user's answer to populate the target field: '{field}'.\n\n"
+            "CRITICAL INSTRUCTIONS:\n"
+            "1. DECIDING THE ACTION: If the user provides ANY valid, relevant information, you MUST set action to 'fill'. "
+            "ONLY set action to 'dismiss' if the user explicitly says 'skip', 'ignore', 'I don't have this', or provides absolute gibberish.\n"
+            "2. EXTRACTED VALUE: Output the extracted value based on the user's text. If the target is an object or list, format it strictly as a JSON string. If it's a text field, just output the clean text.\n\n"
+            "Here is the strict JSON schema for context: \n{schema}"
+        )
+
         prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are evaluating a user's answer for a legal directory submission. Target field: '{field}'.\n\n"
-                       "CRITICAL: You MUST output the 'extracted_value' as a valid string. If the target is an object or list, format it as a JSON string.\n"
-                       "Here is the strict JSON schema: \n{schema}"),
+            ("system", system_prompt),
             ("user", "User's answer: {answer}")
         ])
         
         chain = prompt | structured_llm
         result = chain.invoke({"field": target_field, "answer": user_text, "schema": schema_context})
-        updates["messages"].append(f"DEBUG: LLM decided action='{result.action}'")
+        
+        # --- RED DE SEGURIDAD REPARADA ---
+        safe_action = result.action
+        
+        # Si la IA dice dismiss pero extrajo un texto largo, se equivocó y es un fill.
+        if safe_action == "dismiss" and result.extracted_value and len(str(result.extracted_value)) > 15:
+            safe_action = "fill"
+        elif safe_action not in ["fill", "dismiss"] and result.extracted_value:
+            safe_action = "fill"
 
-        if result.action == "dismiss":
+        updates["messages"].append(f"DEBUG: LLM decided action='{result.action}' -> safe_action='{safe_action}'")
+
+        # FIX: Ahora evaluamos con safe_action en lugar de result.action
+        if safe_action == "dismiss":
             current_dismissed = getattr(state, "dismissed_gaps", [])
             if target_field not in current_dismissed:
                 current_dismissed.append(target_field)
             updates["dismissed_gaps"] = current_dismissed
             updates["messages"].append(f"Answer Evaluator: User dismissed the '{target_field}' field.")
             
-        elif result.action == "fill":
-            updates["messages"].append(f"DEBUG: Valor extraído por LLM: {result.extracted_value}")
+        elif safe_action == "fill":
+            updates["messages"].append(f"DEBUG: Valor extraído por LLM: {str(result.extracted_value)[:100]}...")
+            
+            # --- NUEVO: INTERCEPTOR DE METADATA ---
+            if target_field.startswith("metadata."):
+                meta_key = target_field.split(".")[1] # Extrae "submission_deadline"
+                metadata_obj = getattr(state, "metadata", None)
+                
+                if metadata_obj:
+                    # Inyectamos el valor en el objeto metadata
+                    setattr(metadata_obj, meta_key, result.extracted_value)
+                    updates["metadata"] = metadata_obj
+                    updates["messages"].append(f"SUCCESS: Metadata '{meta_key}' updated to '{result.extracted_value}'.")
+                
+                # Limpiamos y salimos para que no intente guardarlo en el documento
+                updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
+                return updates
             if submission:
                 sub_dict = submission.model_dump()
                 
-                # --- INTENTO DE DECODIFICACIÓN ---
                 try:
                     val_to_inject = json.loads(result.extracted_value)
                     updates["messages"].append("DEBUG: El valor fue procesado como objeto/lista JSON.")
@@ -126,26 +159,20 @@ def process_answer_node(state: AgentState) -> dict:
                     val_to_inject = result.extracted_value
                     updates["messages"].append("DEBUG: El valor fue procesado como string simple.")
 
-                # LLAMADA A LA FUNCIÓN (Ahora sí existe)
                 try:
-                    # 1. Intentamos actualizar el diccionario
                     success = update_nested_field(sub_dict, target_field, val_to_inject)
                     
                     if success:
-                        # 2. Intentamos validar el modelo completo
                         try:
                             updates["submission"] = type(submission)(**sub_dict)
                             updates["messages"].append(f"SUCCESS: Field '{target_field}' updated.")
                         except ValidationError as e:
-                            # SI FALLA LA VALIDACIÓN, NO PARAMOS EL SISTEMA
-                            # Guardamos el dato como un diccionario simple para no perder el progreso
                             updates["submission"] = sub_dict 
                             updates["messages"].append(f"WARNING: Type mismatch in '{target_field}', stored as raw data.")
                     else:
                         updates["messages"].append(f"ERROR: Path '{target_field}' not found.")
 
                 except Exception as e:
-                    # ESCUDO FINAL: Si algo sale muy mal, notificamos y limpiamos para que el usuario pueda reintentar
                     updates["messages"].append(f"CRITICAL ERROR: {str(e)}")
                     updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
                 

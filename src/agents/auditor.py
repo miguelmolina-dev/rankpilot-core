@@ -38,6 +38,19 @@ def audit_node(state: AgentState) -> dict:
     # 3. Filter the gaps: Keep it only if the 'field' name is NOT in the dismissed list
     filtered_gaps = [gap for gap in raw_gaps if gap.get("field") not in dismissed_gaps]
 
+    metadata = getattr(state, "metadata", None)
+    deadline = getattr(metadata, "submission_deadline", "") if metadata else ""
+    active_gaps = filtered_gaps # Para claridad en el mensaje de log
+    
+    # Si la fecha está vacía o es la de por defecto, agregamos un gap especial
+    if not deadline or deadline == "No deadline provided":
+        # Verificamos que no haya sido descartado por el usuario
+        if "metadata.submission_deadline" not in dismissed_gaps:
+            active_gaps.append({
+                "field": "metadata.submission_deadline",
+                "reason": "The system requires the official submission deadline to calculate the strategic roadmap and urgency."
+            })
+
     # 4. Update the state with the newly filtered list
     updates["gaps"] = filtered_gaps
 

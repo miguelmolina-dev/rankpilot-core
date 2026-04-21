@@ -1,58 +1,101 @@
 import operator
-from typing import Annotated, List, Dict, Any, Optional
+from typing import Annotated, List, Dict, Any, Optional, Union
 from pydantic import BaseModel, Field, field_validator
 from src.core.schemas import BaseSubmission
 
+# ==========================================
+# 1. MODELOS DE RANKPILOT (Positioning & Strategy)
+# ==========================================
+class PositioningCore(BaseModel):
+    practice_model: str = ""
+    practice_definition: str = ""
+    confidence_score: float = 0.0
+    signals: List[str] = Field(default_factory=list)
 
+class PositioningTier(BaseModel):
+    label: str = ""
+    explanation: str = ""
+
+class BlindSpot(BaseModel):
+    issue: str = ""
+    description: str = ""
+
+class Milestone(BaseModel):
+    category: str
+    action_title: str
+    why_it_matters: str
+    technical_instruction: str
+    priority_level: int
+    target_completion_date: str
+
+class ExecutiveSummary(BaseModel):
+    overall_score: int = 0
+    risk_level: str = ""
+    strategic_verdict: str = ""
+    top_differentiators: List[str] = Field(default_factory=list)
+    audit_letter_markdown: str = ""
+
+class MetaData(BaseModel):
+    file_base64: str = ""
+    target_band: Optional[str] = None
+    directory: Optional[str] = None
+    guide: str = Field(default="", description="Guide/Book/Research Edition")
+    region: str = Field(default="", description="Región")
+    practice_area: str = ""
+    jurisdiction: str = Field(default="", description="Jurisdicción")
+    location: str = ""
+    submission_deadline: str = Field(
+        default="", 
+        description="The official deadline for this submission. Used by the Scheduler to calculate urgency."
+    )
+    firm_name: str = ""
+
+
+# ==========================================
+# 2. EL SÚPER ESTADO UNIFICADO
+# ==========================================
 class AgentState(BaseModel):
     """
-    Represents the state of our agent for LangGraph.
+    El 'Súper Estado' que fusiona el constructor de Submissions y el RankPilot Engine.
     """
-    # Documents input as base64
-    base64_documents: List[Dict[str, str]] = Field(default_factory=list)
-
-    # Paths to decoded input documents
-    decoded_file_paths: List[str] = Field(default_factory=list)
-
-    # Type of submission (e.g. Legal500 US 2026, Chambers Global)
+    # --- Identificación y Metadata ---
+    submission_id: str = ""
     target_submission_type: Optional[str] = None
-
-    # The main structured data we are extracting and building
-    submission: Optional[BaseSubmission] = None
-
-    # Gap analysis results
-    gaps: List[Dict[str, Any]] = Field(default_factory=list)
-
-    # Dynamic questions generated to cover gaps
-    questions: List[str] = Field(default_factory=list)
-
-    # History of Q&A interactions with Laravel
-    history: List[str] = Field(default_factory=list)
-
-    # --- RAW TEXT INPUT ---
-    raw_input_text: str = ""
-
-    # --- FIX: Flexibilidad total para Laravel ---
-    # Cambiamos Dict[str, str] por Dict[str, Any] para atrapar nulls antes de que explote
-    new_answer: Dict[str, Any] = Field(default_factory=dict)
-
-    # Base64 output representation of the final document
+    metadata: Optional[MetaData] = None
+    
+    # --- Archivos y Texto Extraído ---
+    base64_documents: List[Dict[str, str]] = Field(default_factory=list)
+    decoded_file_paths: List[str] = Field(default_factory=list)
+    raw_text: str = "" # Usado por RankPilot para el análisis
+    extracted_text: Optional[str] = None # Legacy de Submissions
     output_base64: Optional[str] = None
-
-    # Optional fields for tracking process
-    messages: Annotated[list, operator.add] = Field(default_factory=list)
-    current_step: str = ""
-    extracted_text: Optional[str] = None
-    errors: List[str] = Field(default_factory=list)
     
-    # Track fields the user explicitly skipped
+    # --- El Corazón de Submissions ---
+    submission: Optional[BaseSubmission] = None
+    gaps: List[Dict[str, Any]] = Field(default_factory=list) # Formato dict para dot-notation
     dismissed_gaps: List[str] = Field(default_factory=list)
+    new_answer: Dict[str, Any] = Field(default_factory=dict) # Protegido por el Null Killer
+    questions: List[str] = Field(default_factory=list)
     
-    # Configurations loaded from YAML for dynamic strategies
+    # --- El Corazón de RankPilot ---
+    positioning_core: Optional[PositioningCore] = None
+    positioning_tier: Optional[PositioningTier] = None
+    blind_spots: List[BlindSpot] = Field(default_factory=list)
+    competitive_advantage: List[str] = Field(default_factory=list)
+    evolution_path: List[Milestone] = Field(default_factory=list)
+    executive_summary: Optional[ExecutiveSummary] = None
+
+    # --- Trazabilidad y Logs ---
+    history: List[str] = Field(default_factory=list)
+    messages: Annotated[list, operator.add] = Field(default_factory=list)
+    # Acepta str (Submissions) o int (RankPilot) para evitar quiebres:
+    current_step: Union[str, int] = "" 
+    next_node: str = "" # Usado por RankPilot para ruteo condicional
+    errors: List[str] = Field(default_factory=list)
     config: Dict[str, Any] = Field(default_factory=dict)
 
     # ==========================================
-    # VALIDADOR: NORMALIZAR TIPO DE SUBMISSION
+    # VALIDADORES (Los Escudos de Producción)
     # ==========================================
     @field_validator("target_submission_type", mode="before")
     @classmethod
@@ -66,9 +109,6 @@ class AgentState(BaseModel):
             return "Chambers"
         return value.capitalize()
     
-    # ==========================================
-    # VALIDADOR: ESCUDO ANTI-PHP PARA SUBMISSION
-    # ==========================================
     @field_validator("submission", mode="before")
     @classmethod
     def sanitize_php_garbage(cls, v: Optional[Any]) -> Optional[Any]:
@@ -79,21 +119,13 @@ class AgentState(BaseModel):
                     v[field] = {}
         return v
 
-    # ==========================================
-    # NEW: ESCUDO PARA NEW_ANSWER (The Null Killer)
-    # ==========================================
     @field_validator("new_answer", mode="before")
     @classmethod
     def sanitize_new_answer(cls, v: Any) -> Dict[str, str]:
-        """
-        Si Laravel manda null en target_field, question_text o answer,
-        lo convertimos en "" para que Pydantic no llore.
-        """
+        """El Null Killer de Laravel"""
         default = {"target_field": "", "question_text": "", "answer": ""}
-        
         if not isinstance(v, dict):
             return default
-            
         return {
             "target_field": str(v.get("target_field") or ""),
             "question_text": str(v.get("question_text") or ""),

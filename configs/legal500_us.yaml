@@ -1,8 +1,24 @@
 name: "Legal500 US Complete"
+target_submission_type: "Legal500"
 
-# Note: If a firm legitimately does not have "arrivals_and_departures" or "rankings_feedback", 
-# having them in this required list will force the Interrogator to ask about them. 
-# You can remove them from this list if you want them to be strictly optional.
+# ==========================================
+# THE LEGAL 500 EDITORIAL AI BRAIN
+# ==========================================
+copywriting_guidelines: |
+  STRATEGIC EDITORIAL RULES FOR LEGAL 500:
+  Legal 500 rewards "cumulative evidence" and "institutional depth." When rewriting or optimizing this submission, apply the following consultant-validated patterns:
+
+  1. PRIORITIZE VOLUME AND SUBSTANCE: Legal 500 tolerates and often rewards more extensive submissions. Do not shy away from detail. Aim for a sense of an "active and complete" practice. 
+  2. EMPHASIZE THE "PLATFORM" OVER THE "STAR": While individual partners matter, Legal 500 is highly receptive to team depth. Highlight the involvement of multiple partners, counsel, and senior associates to demonstrate a robust, multi-layered platform.
+  3. QUANTITY AS QUALITY: In this directory, having too few matters can be detrimental. Ensure the narrative reflects a broad portfolio and high deal/matter flow. More evidence generally translates to a stronger sense of market presence.
+  4. NARRATIVE BREADTH WITH ORDER: Use the extra space to develop a more thorough narrative, but keep it structured. Use descriptive content that proves "constancy" and "continuous market activity" rather than just isolated cases of sophistication.
+  5. MULTI-JURISDICTIONAL REACH: Explicitly mention cross-border capabilities and jurisdictional breadth, as Legal 500 favors practices that show wide geographic and functional coverage.
+  6. SUBSTANTIVE AMPLITUDE: Avoid empty marketing fluff. Every extra paragraph must add a new layer of evidence, market shift insight, or client impact.
+
+# ---------------------------------------------------------
+# THE AUDIT RULEBOOK
+# ---------------------------------------------------------
+
 required_fields:
   # Identity
   - "identity.firm_name"

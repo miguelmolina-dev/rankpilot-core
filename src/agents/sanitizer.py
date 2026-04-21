@@ -24,8 +24,7 @@ def get_long_string_fields(data: Any, path: str = "") -> Dict[str, str]:
             long_strings.update(get_long_string_fields(v, new_path))
     elif isinstance(data, list):
         for i, item in enumerate(data):
-            # FIX: Use a dot for array indices instead of brackets (e.g., matters.0.matter_description)
-            new_path = f"{path}.{i}" if path else str(i)
+            new_path = f"{path}.{i}"
             long_strings.update(get_long_string_fields(item, new_path))
     elif isinstance(data, str) and len(data) > 50:
         long_strings[path] = data
@@ -33,28 +32,24 @@ def get_long_string_fields(data: Any, path: str = "") -> Dict[str, str]:
 
 def apply_cleaned_field(data: Any, path: str, clean_text: str):
     """Recursively applies the cleaned text back to the specific dictionary path."""
-    # FIX: Now we can just safely split by dots
     keys = path.split(".")
-    
     current = data
     for key in keys[:-1]:
         if isinstance(current, dict):
             current = current.get(key)
         elif isinstance(current, list):
             current = current[int(key)]
-            
     final_key = keys[-1]
     if isinstance(current, dict):
         current[final_key] = clean_text
     elif isinstance(current, list):
         current[int(final_key)] = clean_text
 
-
+# --- NODE IMPLEMENTATION ---
 def sanitizer_node(state: AgentState) -> dict:
     """
-    Sanitizer Node:
-    Scans the extracted submission for raw, messy text blocks.
-    Uses an LLM to strip web artifacts, formatting errors, and metadata.
+    Sanitizer Node with Batching Logic:
+    Processes fields in groups of 5 to prevent LLM output token limits and EOF errors.
     """
     updates = {"current_step": "sanitizer", "messages": []}
 
@@ -65,72 +60,90 @@ def sanitizer_node(state: AgentState) -> dict:
     submission_dict = submission_data.model_dump(exclude_none=True)
     target_submission_type = getattr(state, "target_submission_type", "Legal500") or "Legal500"
 
-    # 1. Hunt down the messy text (Saves massive amounts of tokens)
+    # 1. Identificar campos largos
     text_fields_to_clean = get_long_string_fields(submission_dict)
-    
     if not text_fields_to_clean:
         updates["messages"].append("Sanitizer node: No long text fields found to clean.")
         return updates
 
-    # Convert to a readable string for the LLM
-    dirty_data_context = "\n".join([f"KEY: {k}\nTEXT: {v}\n---" for k, v in text_fields_to_clean.items()])
+    # --- LÓGICA DE BATCHING (Grupos de 5) ---
+    items = list(text_fields_to_clean.items())
+    batch_size = 8
+    batches = [items[i:i + batch_size] for i in range(0, len(items), batch_size)]
+    
+    # Configuración de Guías Editoriales (desde YAML)
     taml_config = getattr(state, "config", {}) or {}
     custom_guidelines = taml_config.get("copywriting_guidelines", "No additional guidelines provided.")
 
-    try:
-        # We can increase the temperature slightly (e.g., 0.2 or 0.3) to allow for better phrasing and vocabulary.
-        llm = get_llm(temperature=0.3)
-        structured_llm = llm.with_structured_output(SanitizationBatch)
+    llm = get_llm(temperature=0.3)
+    # Importante: Algunos modelos requieren max_tokens explícito para salidas largas
+    if hasattr(llm, "max_tokens"):
+        llm.max_tokens = 4000
 
-        system_prompt = (
-            "You are an elite Legal Copywriter and Strategist working for a top-tier law firm. "
-            "Your job is to take raw, messy, internal notes scraped from a submission draft and transform them into "
-            "persuasive, highly professional, partner-level prose ready for submission to Legal500 or Chambers & Partners.\n\n"
-            "=========================================\n"
-            "DIRECTORY-SPECIFIC COPYWRITING RULES:\n"
-            f"{custom_guidelines}\n"
-            "=========================================\n\n"
-            "CRITICAL COPYWRITING INSTRUCTIONS:\n"
-            "1. ELEVATE THE TONE: Rewrite the text to be authoritative, commercially aware, and punchy. Use high-end legal and business vocabulary (e.g., instead of 'we do FinTech', use 'we provide strategic counsel navigating the intersection of complex regulatory frameworks and digital innovation').\n"
-            "2. STRUCTURE FOR SCANNABILITY: Legal evaluators read thousands of these. If the input contains multiple distinct concepts (e.g., 'Growing team', 'Cross-border capabilities'), format them using clear, bolded bullet points or short, powerful paragraphs.\n"
-            "3. STRIP THE JUNK: Silently delete all raw URLs, internal ranking notes (e.g., 'Current ranking: Band 3'), and conversational filler.\n"
-            "4. PRESERVE ALL FACTS (ZERO HALLUCINATION): You must retain every single concrete fact: client names, attorney names, dates, financial values, and specific jurisdictions. Do not invent cases or metrics.\n"
-            "5. FOCUS ON IMPACT: Frame the firm's work not just as legal tasks, but as strategic market impact (e.g., 'first to market', 'navigating unprecedented insolvency', 'enabling cross-border scaling')."
-            "6. THE FIRM-FIRST PERSPECTIVE (RANKING FEEDBACK): When rewriting 'rankings_feedback', you MUST speak in the first-person plural ('We believe...'). Even if the raw notes focus heavily on a specific partner, you must anchor the argument to the firm itself. Always begin by advocating for the firm's market position (e.g., 'Pérez Correa González merits elevation...'), and then seamlessly use the individual partner's achievements as supporting evidence for the firm's overall dominance."
-            "7. STRATEGIC EMPHASIS: You are allowed to use Markdown bolding to emphasize key elements. Wrap important firm names, high-profile client names, or critical financial metrics in double asterisks (e.g., **Apple** or **$500M**). Do NOT use any other Markdown (no headers, no italics, no bullet points using dashes). Only use asterisks for bolding."
-        )
+    structured_llm = llm.with_structured_output(SanitizationBatch)
 
+    system_prompt = (
+        "You are an elite Legal Copywriter and Strategist working for a top-tier law firm.\n"
+        "Your job is to transform raw, messy notes into persuasive, professional, partner-level prose.\n\n"
+        "=========================================\n"
+        "DIRECTORY-SPECIFIC COPYWRITING RULES:\n"
+        f"{custom_guidelines}\n"
+        "=========================================\n\n"
+        "CRITICAL INSTRUCTIONS:\n"
+        "1. ELEVATE THE TONE: Use high-end legal and business vocabulary. Be authoritative and punchy.\n"
+        "2. STRUCTURE FOR SCANNABILITY: Use powerful paragraphs or short blocks. bold key terms using asterisks.\n"
+        "3. STRIP THE JUNK: Remove URLs, internal notes, and filler.\n"
+        "4. ZERO HALLUCINATION: Retain every fact (names, dates, values, jurisdictions).\n"
+        "5. FOCUS ON IMPACT: Frame work as strategic market impact (e.g., 'first to market').\n"
+        "6. FIRM-FIRST PERSPECTIVE: Anchor arguments to the firm's overall dominance.\n"
+        "7. MARKDOWN: Use ONLY double asterisks for bolding (e.g. **Firm Name**). No other markdown."
+    )
+
+    total_cleaned = 0
+    for i, batch in enumerate(batches):
+        # Crear el contexto de datos "sucios" para este lote
+        dirty_data_context = "\n".join([f"KEY: {k}\nTEXT: {v}\n---" for k, v in batch])
+        
         user_prompt = (
-            "Here are the specific fields and their raw text that need to be rewritten for the final submission:\n\n"
+            f"### BATCH {i+1} of {len(batches)} ###\n"
+            "Clean and rewrite the following fields according to the rules:\n\n"
             f"{dirty_data_context}\n\n"
-            "Return the list of rewritten fields. Make sure the 'field_key' perfectly matches the KEY provided."
+            "Return the list of rewritten fields. Ensure 'field_key' perfectly matches the provided KEY."
         )
 
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("human", user_prompt),
-        ])
+        try:
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", system_prompt),
+                ("human", user_prompt),
+            ])
+            
+            chain = prompt | structured_llm
+            # El invoke va vacío porque las variables ya están inyectadas en el prompt template
+            output = chain.invoke({}) 
 
-        chain = prompt | structured_llm
-        output = chain.invoke({})
+            if output and output.cleaned_fields:
+                for clean_item in output.cleaned_fields:
+                    apply_cleaned_field(submission_dict, clean_item.field_key, clean_item.sanitized_text)
+                    total_cleaned += 1
+            
+        except Exception as batch_error:
+            # Si un lote falla (por ejemplo, por contenido sensible o error de red), 
+            # el sistema continúa con el siguiente lote para salvar el resto de la información.
+            print(f"--- [WARNING] Failed to sanitize batch {i+1}: {batch_error} ---")
+            updates["messages"].append(f"Sanitizer: Batch {i+1} failed to process. Keeping raw data for these fields.")
 
-        # 2. Patch the clean data back into the dictionary
-        for clean_item in output.cleaned_fields:
-            apply_cleaned_field(submission_dict, clean_item.field_key, clean_item.sanitized_text)
-
-        updates["messages"].append(f"Sanitizer node: Successfully sanitized {len(output.cleaned_fields)} text fields.")
-
-        # 3. Re-validate through Pydantic to ensure the schema is still perfect
+    # 3. Re-validar a través de Pydantic y actualizar el estado
+    try:
         if target_submission_type == "Legal500":
             updates["submission"] = Legal500Submission(**submission_dict)
         elif target_submission_type == "LeadersLeague":
             updates["submission"] = LeadersLeagueSubmission(**submission_dict)
         else:
             updates["submission"] = ChambersSubmission(**submission_dict)
-
+            
+        updates["messages"].append(f"Sanitizer node: Successfully sanitized {total_cleaned} fields across {len(batches)} batches.")
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        updates["messages"].append(f"Sanitizer node failed: {e}. Proceeding with raw data.")
+        print(f"--- [ERROR] Schema validation failed after sanitization: {e} ---")
+        updates["messages"].append("Sanitizer: Schema validation failed. Returning original data.")
 
     return updates

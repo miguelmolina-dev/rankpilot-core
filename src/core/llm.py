@@ -13,8 +13,6 @@ def get_llm(temperature: float = 0.2, updates: dict = None):
     
     # 1. Preparar el log inicial
     env_msg = f"LLM Factory: Environment detected -> '{environment}'"
-    print(f"\n=== DEBUG [llm.py] ===")
-    print(f"-> {env_msg}")
     
     # Si nos pasaron el diccionario de updates, guardamos el log para que viaje a Laravel
     if updates is not None and "messages" in updates:
@@ -26,14 +24,14 @@ def get_llm(temperature: float = 0.2, updates: dict = None):
         
         # 2. Preparar el log de OpenRouter
         local_msg = f"LLM Factory: Loading LOCAL config (Gemini) | Key: {safe_key}"
-        print(local_msg)
-        print(f"======================\n")
         
         if updates is not None and "messages" in updates:
             updates["messages"].append(local_msg)
+# Configuración para OpenRouter (Gemini)
+# Modelo: google/gemini-2.0-flash-001 (o el que esté disponible en OpenRouter)
 
         return ChatOpenAI(
-            model="google/gemini-2.0-flash-001",
+            model="google/gemini-2.5-flash-lite",
             api_key=api_key,
             base_url="https://openrouter.ai/api/v1",
             temperature=temperature,
@@ -49,8 +47,6 @@ def get_llm(temperature: float = 0.2, updates: dict = None):
         
         # 3. Preparar el log de Producción
         prod_msg = f"LLM Factory: Loading PRODUCTION config (gpt-5.4-mini) | Key: {safe_key}"
-        print(prod_msg)
-        print(f"======================\n")
         
         if updates is not None and "messages" in updates:
             updates["messages"].append(prod_msg)

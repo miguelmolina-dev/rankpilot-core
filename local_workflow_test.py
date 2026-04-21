@@ -1,7 +1,7 @@
 import os
 import base64
 from src.core.workflow import build_workflow
-from src.core.state import AgentState
+from src.core.state import AgentState, MetaData
 from os import getenv
 from dotenv import load_dotenv
 load_dotenv()  # Load environment variables from .env file
@@ -28,9 +28,19 @@ def main():
 
     # Initial state mimicking what would be sent to initiate
     current_state = AgentState(
+        submission_id="test_001",
+        # <-- AQUÍ ESTÁ LA MAGIA: Pasamos los 5 requerimientos de Laravel
+        metadata=MetaData(
+            directory="Legal500", 
+            guide="Latin America",
+            region="LatAm",
+            jurisdiction="Mexico",
+            practice_area="Fintech",
+            firm_name="Perez Correa"
+        ),
         base64_documents=[{"filename": file_path, "base64": b64_string}],
         decoded_file_paths=[],
-        target_submission_type="Chambers", # <--- CHANGE THIS TO 'Chambers'
+        target_submission_type="Legal500", # (Legacy, pero lo dejamos)
         submission=None,
         gaps=[],
         questions=[],
@@ -102,7 +112,7 @@ def main():
 
     output_b64 = current_state.get("output_base64")
     if output_b64:
-        print("\n--- Final Document Assembled ---")
+        print("\n--- Final Document Assembled (Act 2 Complete) ---")
 
         # Decode base64 and save as docx
         output_dir = os.path.join("data", "processed")
@@ -117,9 +127,51 @@ def main():
     else:
         print("\nNo output base64 found in the final state. Assembly might have failed.")
 
-    print("\n--- Final Submission Data ---")
-    print(current_state.get("submission"))
-    print("-----------------------------\n")
+    # ==========================================
+    # NUEVO: IMPRIMIR EL ACTO 3 (RANKPILOT ENGINE)
+    # ==========================================
+    print("\n========= 🏆 RANKPILOT STRATEGIC DIAGNOSIS (Act 3) =========")
+    
+    exec_summary = current_state.get("executive_summary", {})
+    if exec_summary:
+        print(f"Overall Score:  {exec_summary.get('overall_score', 'N/A')}/100")
+        print(f"Risk Level:     {exec_summary.get('risk_level', 'N/A')}")
+        print(f"Verdict:        {exec_summary.get('strategic_verdict', 'N/A')}")
+        
+        print("\n--- Top Differentiators ---")
+        for diff in exec_summary.get('top_differentiators', []):
+            print(f" - {diff}")
+
+        print("\n--- The Evolution Path (Roadmap) ---")
+        evolution_path = current_state.get("evolution_path", [])
+        if evolution_path:
+            for i, step in enumerate(evolution_path):
+                # Soportar Pydantic model o dict
+                title = getattr(step, 'action_title', step.get('action_title', '')) if isinstance(step, dict) else step.action_title
+                date = getattr(step, 'target_completion_date', step.get('target_completion_date', '')) if isinstance(step, dict) else step.target_completion_date
+                print(f"Step {i+1} [{date}]: {title}")
+        else:
+            print("No Evolution Path generated.")
+            
+        print("============================================================")
+
+        print("\n--- Final Submission Data (JSON Object) ---")
+            
+        print("\n--- Formal Audit Letter ---")
+        print(exec_summary.get('audit_letter_markdown', 'No letter generated.'))
+    else:
+        print("Executive Summary not found. The Act 3 pipeline might have failed.")
+    
+    print("============================================================")
+
+    print("\n--- Final Submission Data (JSON Object) ---")
+    # Imprimimos de forma limpia si es un objeto Pydantic
+    submission_obj = current_state.get("submission")
+    if submission_obj:
+        print(submission_obj.model_dump_json(indent=2)[:1500] + "\n... [Truncated for readability]")
+    else:
+        print("No submission object found.")
+    print("-------------------------------------------\n")
 
 if __name__ == "__main__":
     main()
