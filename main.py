@@ -33,11 +33,11 @@ def process_documents(request: ProcessRequest):
     workflow = build_workflow()
 
     # We load the submission dict into the Pydantic model if it exists
-    from src.core.schemas import AnchorSubmission
+    from src.core.schemas import Legal500Submission
 
     sub_model = None
     if request.submission:
-        sub_model = AnchorSubmission(**request.submission)
+        sub_model = Legal500Submission(**request.submission)
 
     initial_state: AgentState = {
         "base64_documents": request.base64_documents,
