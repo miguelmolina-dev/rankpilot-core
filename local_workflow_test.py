@@ -30,7 +30,7 @@ def main():
     current_state = AgentState(
         base64_documents=[{"filename": file_path, "base64": b64_string}],
         decoded_file_paths=[],
-        target_submission_type="Legal500", # <--- CHANGE THIS TO 'Chambers'
+        target_submission_type="Chambers", # <--- CHANGE THIS TO 'Chambers'
         submission=None,
         gaps=[],
         questions=[],

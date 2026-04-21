@@ -47,6 +47,9 @@ class AgentState(BaseModel):
     
     # Track fields the user explicitly skipped
     dismissed_gaps: List[str] = Field(default_factory=list)
+    
+    # Configurations loaded from YAML for dynamic strategies
+    config: Dict[str, Any] = Field(default_factory=dict)
 
     # ==========================================
     # VALIDADOR: NORMALIZAR TIPO DE SUBMISSION

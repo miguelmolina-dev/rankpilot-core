@@ -3,13 +3,13 @@ from typing import Dict, Any, List
 from src.strategies.base import SubmissionStrategy
 from src.io.docx_manager import assemble_submission
 
-class ChambersStrategy(SubmissionStrategy):
+class LeadersLeagueStrategy(SubmissionStrategy):
     """
-    Submission strategy specifically for Chambers (Global and USA).
+    Submission strategy specifically for Leaders League templates.
     Config-driven based on YAML definitions.
     """
 
-    def __init__(self, config_path: str = "configs/chambers_usa.yaml"):
+    def __init__(self, config_path: str = "configs/leaders_league_advertising.yaml"):
         self.config_path = config_path
         self._load_config()
 
@@ -23,7 +23,8 @@ class ChambersStrategy(SubmissionStrategy):
     def audit(self, submission_data: Dict[str, Any]) -> List[Dict[str, Any]]:
         """
         Runs the Gap Analysis.
-        CRITICAL: Outputs the FULL dot-notation path so the Answer Evaluator knows exactly where to inject the data.
+        Upgraded to parse dictionaries containing 'field' and 'description' 
+        from the new YAML architecture.
         """
         required_fields = self.config.get("required_fields", [])
         gaps = []
@@ -42,90 +43,94 @@ class ChambersStrategy(SubmissionStrategy):
             except (KeyError, IndexError, TypeError):
                 return None
 
-        for field_path in required_fields:
+        for item in required_fields:
+            # EXTRACT FROM THE DICTIONARY:
+            field_path = item.get("field")
+            # If a description exists, pass it along as the reason!
+            description = item.get("description", f"Please provide information for {field_path}.")
+
             val = get_nested_value(submission_data, field_path)
+            
             # If the field doesn't exist, is an empty string, or an empty list
             if val in [None, "", []]:
-                # We KEEP the full dot-notation path!
-                friendly_name = field_path.split('.')[-1].replace("_", " ").title()
                 gaps.append({
                     "field": field_path, 
-                    "reason": f"Please provide information for {friendly_name}."
+                    "reason": description # <--- The AI will read this exact description!
                 })
                 
         return gaps
 
     def assemble(self, submission_data: Dict[str, Any], output_path: str) -> str:
         """
-        Uses python-docx to prepare data and assemble the Chambers docx.
+        Uses python-docx to prepare data and assemble the Leaders League docx.
         Pads all arrays to prevent IndexError in docxtpl.
         """
         # ==========================================
         # 1. TRANSLATION DICTIONARY (Pydantic -> Jinja2)
         # ==========================================
         context = {
-            "SectionA": submission_data.get("A_preliminary_information", {}),
-            "SectionB": submission_data.get("B_department_information", {}),
-            "SectionC": submission_data.get("C_feedback", {}),
-            "D_publishable_information": submission_data.get("D_publishable_information", {}),
-            "E_confidential_information": submission_data.get("E_confidential_information", {}),
-            "target_submission_type": submission_data.get("target_submission_type", "Chambers_Global")
+            "firm_information": submission_data.get("firm_information", {}),
+            "department_information": submission_data.get("department_information", {}),
+            "peer_feedback": submission_data.get("peer_feedback", {}),
+            "ranking_feedback": submission_data.get("ranking_feedback", {}),
+            "work_highlights": submission_data.get("work_highlights", [])
         }
 
-        # Ensure all base sections exist to prevent KeyErrors (Safe fallback)
-        context.setdefault("SectionA", {})
-        context.setdefault("SectionB", {})
-        context.setdefault("SectionC", {})
-        context.setdefault("D_publishable_information", {})
-        context.setdefault("E_confidential_information", {})
-
-        # FLAG FOR USA vs GLOBAL LOGIC:
-        target_type = context.get("target_submission_type", "Chambers_Global")
-        context["is_global_template"] = target_type == "Chambers_Global"
+        # Ensure all base sections exist as dictionaries/lists to prevent KeyErrors
+        for key in ["firm_information", "department_information", "peer_feedback", "ranking_feedback"]:
+            if not context[key]:
+                context[key] = {}
+        if not context["work_highlights"]:
+            context["work_highlights"] = []
 
         # ---------------------------------------------------------
-        # 1. THE PADDING ENGINE (Prevents docxtpl IndexErrors)
+        # 2. THE PADDING ENGINE (Prevents docxtpl IndexErrors)
         # ---------------------------------------------------------
-        def pad_array(parent_dict, key, required_length):
+        def pad_array(parent_dict, key, required_length, fill_type=dict):
             arr = parent_dict.setdefault(key, [])
             while len(arr) < required_length:
-                arr.append({})
+                arr.append(fill_type())
             return arr
 
-        # Pad Preliminary Info
-        pad_array(context["SectionA"], "A4_contact_persons", 2)
-        
         # Pad Department Info
-        pad_array(context["SectionB"], "B4_department_heads", 2)
-        pad_array(context["SectionB"], "B8_hires_departures_last_12_months", 3)
-        pad_array(context["SectionB"], "B9_lawyers_ranked_unranked", 6)
+        dep_info = context["department_information"]
+        pad_array(dep_info, "department_heads", 5)
+        pad_array(dep_info, "department_changes", 5)
+        pad_array(dep_info, "top_five_sectors", 5, fill_type=str) # Pad with empty strings
+        pad_array(dep_info, "active_clients", 30)                 # Pad to 30 clients
 
-        # Pad Feedback
-        pad_array(context["SectionC"], "C1_barristers_advocates", 8)
+        # Pad Peer Feedback
+        peer_info = context["peer_feedback"]
+        pad_array(peer_info, "established_practitioners", 5)
+        pad_array(peer_info, "rising_stars", 5)
 
-        # Pad Clients & Matters
-        pad_array(context["D_publishable_information"], "D0_publishable_clients_list", 10)
-        pad_array(context["D_publishable_information"], "publishable_matters", 10)
-        
-        pad_array(context["E_confidential_information"], "E0_confidential_clients_list", 10)
-        pad_array(context["E_confidential_information"], "confidential_matters", 10)
+        # Pad Work Highlights (Top-level list)
+        wh = context["work_highlights"]
+        while len(wh) < 10:
+            wh.append({})
 
         # ---------------------------------------------------------
-        # 2. BOOLEAN FIXES FOR Y/N
+        # 3. BOOLEAN FIXES FOR Y/N
         # ---------------------------------------------------------
-        lawyers = context["SectionB"]["B9_lawyers_ranked_unranked"]
-        for lawyer in lawyers:
-            for key in ["is_partner", "is_ranked"]:
-                val = lawyer.get(key)
+        # Translate Client booleans
+        for client in dep_info.get("active_clients", []):
+            for key in ["is_new_client", "is_confidential"]:
+                val = client.get(key)
                 if val in [True, "True", "true", "Y", "Yes"]:
-                    lawyer[key] = "Y"
+                    client[key] = "Y"
                 elif val in [False, "False", "false", "N", "No"]:
-                    lawyer[key] = "N"
-                else:
-                    lawyer[key] = ""
+                    client[key] = "N"
+
+        # Translate Work Highlight booleans
+        for highlight in context.get("work_highlights", []):
+            val = highlight.get("is_confidential")
+            if val in [True, "True", "true", "Y", "Yes"]:
+                highlight["is_confidential"] = "Y"
+            elif val in [False, "False", "false", "N", "No"]:
+                highlight["is_confidential"] = "N"
 
         # ---------------------------------------------------------
-        # 3. CLEANUP: Strip trailing newlines
+        # 4. CLEANUP: Strip trailing newlines
         # ---------------------------------------------------------
         def clean_strings(d):
             if isinstance(d, dict):
@@ -143,8 +148,8 @@ class ChambersStrategy(SubmissionStrategy):
                         
         clean_strings(context)
 
-        # 4. BUILD THE DOCUMENT
-        template_name = "USA_Chambers_submission_form_template.docx" if context["is_global_template"] else "USA_Chambers_submission_form_template.docx"
+        # 5. BUILD THE DOCUMENT
+        template_name = "advertising-and-marketing-2026_696fc8957cfef.docx"
         template_path = f"templates/{template_name}"
         
         return assemble_submission(template_path, output_path, context)

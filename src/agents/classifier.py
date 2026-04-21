@@ -1,4 +1,5 @@
 import os
+import yaml
 from src.core.state import AgentState
 from src.io.base64_handler import decode_base64_document
 from src.io.pdf_parser import extract_text_from_pdf
@@ -108,7 +109,27 @@ def classification_node(state: AgentState) -> dict:
         updates["messages"].append("Preparation node: No target_submission_type provided. Defaulting to Legal500.")
     
     updates["target_submission_type"] = current_target
+
+    # =========================================================
+    # NEW: LOAD THE CONFIGURATION (Task: Hacer legible el código)
+    # =========================================================
+    yaml_mapping = {
+        "Chambers_USA": "configs/chambers_usa.yaml",
+        "Chambers": "configs/chambers_usa.yaml", 
+        "LeadersLeague": "configs/leaders_league_advertising.yaml",
+        "Legal500": "configs/legal500.yaml"
+    }
     
+    config_path = yaml_mapping.get(current_target, "configs/legal500.yaml")
+    
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            updates["config"] = yaml.safe_load(f) or {}
+            updates["messages"].append(f"Preparation node: Loaded config from {config_path}")
+    except FileNotFoundError:
+        updates["config"] = {}
+        updates["messages"].append(f"Preparation node Error: Could not find {config_path}")
+
     input_doc_type = getattr(state, "input_document_type", None)
     if not input_doc_type:
         updates["input_document_type"] = "text"

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 from src.core.llm import get_llm
-from src.core.schemas import ChambersSubmission, Legal500Submission
+from src.core.schemas import ChambersSubmission, Legal500Submission, LeadersLeagueSubmission
 
 # --- STRUCTURED OUTPUT MODELS ---
 class CleanedField(BaseModel):
@@ -74,6 +74,8 @@ def sanitizer_node(state: AgentState) -> dict:
 
     # Convert to a readable string for the LLM
     dirty_data_context = "\n".join([f"KEY: {k}\nTEXT: {v}\n---" for k, v in text_fields_to_clean.items()])
+    taml_config = getattr(state, "config", {}) or {}
+    custom_guidelines = taml_config.get("copywriting_guidelines", "No additional guidelines provided.")
 
     try:
         # We can increase the temperature slightly (e.g., 0.2 or 0.3) to allow for better phrasing and vocabulary.
@@ -81,23 +83,21 @@ def sanitizer_node(state: AgentState) -> dict:
         structured_llm = llm.with_structured_output(SanitizationBatch)
 
         system_prompt = (
-            "### ROLE ###\n"
-            "You are an elite English-language Legal Copywriter and Strategist for a top-tier global law firm. "
-            "Your mission is to transform messy, multi-language, or raw internal notes into authoritative, "
-            "partner-level submission prose in STRICT PROFESSIONAL ENGLISH.\n\n"
-            
-            "### CRITICAL COPYWRITING INSTRUCTIONS ###\n"
-            "1. MANDATORY ENGLISH OUTPUT: Regardless of the input language (Spanish, Portuguese, etc.), you MUST "
-            "output the sanitized text ONLY in English. Use high-end British or American legal vocabulary suitable for Legal500/Chambers.\n"
-            "2. ELEVATE THE TONE: Rewrite the text to be authoritative and commercially aware. Instead of 'we do FinTech', "
-            "use 'we provide strategic counsel navigating the intersection of complex regulatory frameworks and digital innovation'.\n"
-            "3. STRUCTURE FOR SCANNABILITY: Use powerful paragraphs or bolded sections (using capital letters since Markdown is forbidden).\n"
-            "4. STRIP THE JUNK: Delete raw URLs, internal ranking notes, and conversational filler.\n"
-            "5. PRESERVE ALL FACTS: Retain every concrete fact (names, dates, values, jurisdictions) accurately.\n"
-            "6. THE FIRM-FIRST PERSPECTIVE: For 'rankings_feedback', always advocate for the firm's market position "
-            "in the first-person plural ('We believe...'), using partners as supporting evidence.\n"
-            "7. STRICTLY NO MARKDOWN: Output pure, clean, plain text ONLY. Do NOT use asterisks (**), hashtags (#), or underscores (_). "
-            "Use standard punctuation and capital letters to separate sections."
+            "You are an elite Legal Copywriter and Strategist working for a top-tier law firm. "
+            "Your job is to take raw, messy, internal notes scraped from a submission draft and transform them into "
+            "persuasive, highly professional, partner-level prose ready for submission to Legal500 or Chambers & Partners.\n\n"
+            "=========================================\n"
+            "DIRECTORY-SPECIFIC COPYWRITING RULES:\n"
+            f"{custom_guidelines}\n"
+            "=========================================\n\n"
+            "CRITICAL COPYWRITING INSTRUCTIONS:\n"
+            "1. ELEVATE THE TONE: Rewrite the text to be authoritative, commercially aware, and punchy. Use high-end legal and business vocabulary (e.g., instead of 'we do FinTech', use 'we provide strategic counsel navigating the intersection of complex regulatory frameworks and digital innovation').\n"
+            "2. STRUCTURE FOR SCANNABILITY: Legal evaluators read thousands of these. If the input contains multiple distinct concepts (e.g., 'Growing team', 'Cross-border capabilities'), format them using clear, bolded bullet points or short, powerful paragraphs.\n"
+            "3. STRIP THE JUNK: Silently delete all raw URLs, internal ranking notes (e.g., 'Current ranking: Band 3'), and conversational filler.\n"
+            "4. PRESERVE ALL FACTS (ZERO HALLUCINATION): You must retain every single concrete fact: client names, attorney names, dates, financial values, and specific jurisdictions. Do not invent cases or metrics.\n"
+            "5. FOCUS ON IMPACT: Frame the firm's work not just as legal tasks, but as strategic market impact (e.g., 'first to market', 'navigating unprecedented insolvency', 'enabling cross-border scaling')."
+            "6. THE FIRM-FIRST PERSPECTIVE (RANKING FEEDBACK): When rewriting 'rankings_feedback', you MUST speak in the first-person plural ('We believe...'). Even if the raw notes focus heavily on a specific partner, you must anchor the argument to the firm itself. Always begin by advocating for the firm's market position (e.g., 'Pérez Correa González merits elevation...'), and then seamlessly use the individual partner's achievements as supporting evidence for the firm's overall dominance."
+            "7. STRATEGIC EMPHASIS: You are allowed to use Markdown bolding to emphasize key elements. Wrap important firm names, high-profile client names, or critical financial metrics in double asterisks (e.g., **Apple** or **$500M**). Do NOT use any other Markdown (no headers, no italics, no bullet points using dashes). Only use asterisks for bolding."
         )
 
         user_prompt = (
@@ -123,6 +123,8 @@ def sanitizer_node(state: AgentState) -> dict:
         # 3. Re-validate through Pydantic to ensure the schema is still perfect
         if target_submission_type == "Legal500":
             updates["submission"] = Legal500Submission(**submission_dict)
+        elif target_submission_type == "LeadersLeague":
+            updates["submission"] = LeadersLeagueSubmission(**submission_dict)
         else:
             updates["submission"] = ChambersSubmission(**submission_dict)
 

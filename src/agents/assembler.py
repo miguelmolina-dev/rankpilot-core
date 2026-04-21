@@ -6,6 +6,8 @@ from src.core.state import AgentState
 from src.strategies.legal500 import Legal500Strategy
 from src.strategies.chambers import ChambersStrategy
 from src.io.base64_encoder import encode_file_to_base64
+from src.io.text_enrichment import convert_all_markdown_to_richtext
+from src.strategies.leaders_league import LeadersLeagueStrategy
 
 def sanitize_filename(name: str) -> str:
     """Removes invalid characters to make the firm name safe for the file system."""
@@ -35,6 +37,8 @@ def assembly_node(state: AgentState) -> dict:
         strategy = Legal500Strategy()
     elif sub_type == "Chambers":
         strategy = ChambersStrategy()
+    elif sub_type == "LeadersLeague":
+        strategy = LeadersLeagueStrategy()
     else:
         # fallback
         strategy = Legal500Strategy()
@@ -75,6 +79,9 @@ def assembly_node(state: AgentState) -> dict:
     final_doc_path = os.path.join(base_dir, final_filename)
 
     try:
+        # --- NEW: Call the imported function cleanly ---
+        convert_all_markdown_to_richtext(submission_dict)
+
         # 3. Let the strategy assemble the document inside the temporary directory
         generated_path = strategy.assemble(submission_dict, temp_dir)
         
@@ -95,7 +102,7 @@ def assembly_node(state: AgentState) -> dict:
         updates["messages"].append(f"Assembly node Error: Failed to assemble document: {str(e)}")
         
     finally:
-        # 6. CLEANUP: Delete the temporary folder and whatever was left inside it
+        # 6. CLEANUP: Delete the temporary folder
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
