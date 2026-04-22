@@ -28,9 +28,8 @@ def classification_node(state: AgentState) -> dict:
     decoded_file_paths = getattr(state, "decoded_file_paths", []) or []
     b64_docs = getattr(state, "base64_documents", [])
     
-    raw_input_text = getattr(state, "raw_input_text", "") or ""
-    extracted_text = raw_input_text
-    if raw_input_text.strip():
+    extracted_text = getattr(state, "extracted_text", "") or ""
+    if extracted_text.strip():
         updates["messages"].append("Preparation node: Successfully received raw text from Laravel.")
 
     # 2. Decode Base64 documents to the hard drive

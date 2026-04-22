@@ -113,7 +113,7 @@ class Dates(BaseModel):
     end: Optional[str] = Field(None, description="End date of the matter. Return null if not provided.")
 
 class Matter(BaseModel):
-    id: Optional[int] = Field(None, description="Matter ID.")
+    id: Optional[str] = Field(None, description="Matter ID.")
     client_name: Optional[str] = Field(None, description="The name of the client.")
     industry_sector: Optional[str] = Field(None, description="The industry sector of the matter/client. Return null if blank.")
     matter_description: Optional[str] = Field(None, description="Detailed description of the matter, background, and firm's role. DO NOT include generic marketing text.")
