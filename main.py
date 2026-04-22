@@ -43,16 +43,20 @@ def run_workflow_task(job_id: str, initial_state: dict, config: dict):
         
         # Mapeo visual de progreso basado en los nodos de LangGraph
         progress_map = {
-            "preparation": {"p": 10, "msg": "Extracting text from document..."},
-            "ingestion": {"p": 30, "msg": "Mapping data to AI schema..."},
-            "sanitizer": {"p": 60, "msg": "Sanitizing and rewriting fields..."},
-            "audit": {"p": 80, "msg": "Auditing submission for gaps..."},
-            "interrogator": {"p": 100, "msg": "Audit complete. Ready for Q&A."},
-            "optimizer": {"p": 40, "msg": "Optimizing strategic narrative..."},
-            "snapshot_generator": {"p": 60, "msg": "Generating audit snapshot..."},
-            "scheduler": {"p": 80, "msg": "Building roadmap timeline..."},
-            "executive_writer": {"p": 95, "msg": "Drafting executive letter..."},
-            "assembly": {"p": 100, "msg": "Assembling final document."}
+            # --- ACTO 1 (El embudo hasta el Chat) ---
+            "classification_node": {"p": 10, "msg": "Extracting and classifying document..."},
+            "process_answer_node": {"p": 15, "msg": "Analyzing Partner's strategic input..."},
+            "ingestion_node": {"p": 30, "msg": "Mapping data to universal schema..."},
+            "sanitizer_node": {"p": 50, "msg": "Sanitizing and elevating narrative..."},
+            "audit_node": {"p": 80, "msg": "Auditing submission for strategic gaps..."},
+            "interrogator_node": {"p": 100, "msg": "Audit paused. Ready for Q&A."},
+            
+            # --- ACTO 2 y 3 (El embudo hacia el Diagnóstico Final) ---
+            "optimize_node": {"p": 25, "msg": "Optimizing strategic narrative..."},
+            "assembly_node": {"p": 45, "msg": "Assembling the final document..."},
+            "snapshot_generator_node": {"p": 65, "msg": "Generating strategic audit snapshot..."},
+            "scheduler_node": {"p": 80, "msg": "Building roadmap and timeline..."},
+            "executive_writer_node": {"p": 95, "msg": "Drafting final executive letter..."}
         }
 
         # Ejecutamos con .stream() para ir nodo por nodo
@@ -138,6 +142,13 @@ async def process_documents(request: Request, background_tasks: BackgroundTasks)
             "metadata": meta_obj,
             "base64_documents": state_input.base64_documents,
             "target_submission_type": state_input.target_submission_type,
+            
+            # --- 2. LOS CABLES PERDIDOS QUE CONECTAN CON LARAVEL ---
+            "input_document_type": state_input.input_document_type,
+            "raw_text": state_input.raw_input_text, # Mapeamos raw_input_text a raw_text
+            "extracted_text": state_input.raw_input_text, # Inyectamos directamente para el classifier
+            # -------------------------------------------------------
+            
             "submission": sub_model,
             "gaps": state_input.gaps,
             "dismissed_gaps": state_input.dismissed_gaps,

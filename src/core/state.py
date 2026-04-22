@@ -61,6 +61,7 @@ class AgentState(BaseModel):
     # --- Identificación y Metadata ---
     submission_id: str = ""
     target_submission_type: Optional[str] = None
+    input_document_type: Optional[str] = None
     metadata: Optional[MetaData] = None
     
     # --- Archivos y Texto Extraído ---

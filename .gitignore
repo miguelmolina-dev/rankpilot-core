@@ -8,7 +8,7 @@ ENV/
 env/
 build/
 dist/
-
+tests/
 # --- Environment & Security ---
 .env
 .flaskenv
