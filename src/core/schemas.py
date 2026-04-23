@@ -112,7 +112,7 @@ class Dates(BaseModel):
     start: Optional[str] = Field(None, description="Start date of the matter. Return null if not provided.")
     end: Optional[str] = Field(None, description="End date of the matter. Return null if not provided.")
 
-class Matter(BaseModel):
+class PMatter(BaseModel):
     id: Optional[str] = Field(None, description="Matter ID.")
     client_name: Optional[str] = Field(None, description="The name of the client.")
     industry_sector: Optional[str] = Field(None, description="The industry sector of the matter/client. Return null if blank.")
@@ -124,8 +124,21 @@ class Matter(BaseModel):
     other_key_team_members: List[TeamMember] = Field(default_factory=list, description="List of other key team members (associates, counsels) on the matter.")
     external_firms_advising: List[ExternalFirm] = Field(default_factory=list, description="List of other external firms involved in the matter.")
     dates: Optional[Dates] = Field(None, description="Start and end dates for the matter.")
-    is_publishable: bool = Field(False)
+    is_publishable: bool = Field(False, description="Whether the matter is publishable. If the text explicitly says 'CONFIDENTIAL', this should be false.")
 
+class NPMatter(BaseModel):
+    id: Optional[str] = Field(None, description="Matter ID.")
+    client_name: Optional[str] = Field(None, description="The name of the client.")
+    industry_sector: Optional[str] = Field(None, description="The industry sector of the matter/client. Return null if blank.")
+    matter_description: Optional[str] = Field(None, description="Detailed description of the matter, background, and firm's role. DO NOT include generic marketing text.")
+    deal_value: Optional[str] = Field(None, description="Financial value of the deal/matter. Return null if blank.")
+    is_cross_border: bool = Field(False)
+    jurisdictions_involved: List[str] = Field(default_factory=list, description="If cross-border, list the jurisdictions involved.")
+    lead_partners: List[TeamMember] = Field(default_factory=list, description="List of lead partners working on this specific matter.")
+    other_key_team_members: List[TeamMember] = Field(default_factory=list, description="List of other key team members (associates, counsels) on the matter.")
+    external_firms_advising: List[ExternalFirm] = Field(default_factory=list, description="List of other external firms involved in the matter.")
+    dates: Optional[Dates] = Field(None, description="Start and end dates for the matter.")
+    is_publishable: bool = Field(False, description="Whether the matter is publishable. If the text explicitly says 'CONFIDENTIAL', this should be false.")
 # -----------------------------------
 # Top-Level Document (Legal 500)
 # -----------------------------------
@@ -137,7 +150,8 @@ class Legal500Submission(BaseSubmission):
     individual_nominations: Optional[IndividualNominations] = None
     team_dynamics: Optional[TeamDynamics] = None
     work_highlights_summaries: List[WorkHighlight] = Field(default_factory=list, max_length=3, description="Up to 3 brief summaries of publishable work highlights.")
-    matters: List[Matter] = Field(default_factory=list)
+    publishable_matters: List[PMatter] = Field(default_factory=list, description="Up to 20 publishable work highlights.")
+    confidential_matters: List[NPMatter] = Field(default_factory=list, description="Up to 20 confidential work highlights.")
 
 
 # =====================================================================

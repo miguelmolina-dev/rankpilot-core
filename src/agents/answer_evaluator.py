@@ -78,6 +78,39 @@ def update_nested_field(data, target, new_value):
 def process_answer_node(state: AgentState) -> dict:
     updates = {"messages": []}
     answer_data = getattr(state, "new_answer", {})
+    answer_text = answer_data.get("answer", "").strip().upper()
+    current_gaps = getattr(state, "gaps", []) or []
+    dismissed = getattr(state, "dismissed_gaps", []) or []
+
+    # =========================================================
+    # 1. COMANDOS TÁCTICOS DE UX (El Bucle de Asistencia)
+    # =========================================================
+    
+    # A) Saltar TODOS los casos publicables restantes
+    if answer_text == "SKIP_PUBLISHABLE_MATTERS":
+        updates["messages"].append("⚙️ [COMMAND] 'SKIP_PUBLISHABLE_MATTERS' detected.")
+        # Filtramos solo los gaps que contengan la palabra 'matters' o 'publishable_matters'
+        campos_casos = [gap.get("field") for gap in current_gaps if "publishable_matters" in gap.get("field", "")]
+        updates["dismissed_gaps"] = dismissed + campos_casos
+        updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
+        return updates
+
+    # B) Saltar TODOS los casos confidenciales restantes
+    elif answer_text == "SKIP_CONFIDENTIAL_MATTERS":
+        updates["messages"].append("⚙️ [COMMAND] 'SKIP_CONFIDENTIAL_MATTERS' detected.")
+        # Filtramos solo los gaps confidenciales
+        campos_confidenciales = [gap.get("field") for gap in current_gaps if "confidential_matters" in gap.get("field", "")]
+        updates["dismissed_gaps"] = dismissed + campos_confidenciales
+        updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
+        return updates
+
+    # C) El botón de escape de emergencia (Saltar TODO)
+    elif answer_text == "SKIP_INTERVIEW":
+        updates["messages"].append("⚙️ [COMMAND OVERRIDE] 'SKIP_INTERVIEW' detected. Dismissing all.")
+        todos_los_campos = [gap.get("field") for gap in current_gaps]
+        updates["dismissed_gaps"] = dismissed + todos_los_campos
+        updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
+        return updates
     
     if not answer_data or not answer_data.get("answer"):
         return updates

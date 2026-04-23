@@ -10,7 +10,7 @@ copywriting_guidelines: |
 
   1. PRIORITIZE VOLUME AND SUBSTANCE: Legal 500 tolerates and often rewards more extensive submissions. Do not shy away from detail. Aim for a sense of an "active and complete" practice. 
   2. EMPHASIZE THE "PLATFORM" OVER THE "STAR": While individual partners matter, Legal 500 is highly receptive to team depth. Highlight the involvement of multiple partners, counsel, and senior associates to demonstrate a robust, multi-layered platform.
-  3. QUANTITY AS QUALITY: In this directory, having too few matters can be detrimental. Ensure the narrative reflects a broad portfolio and high deal/matter flow. More evidence generally translates to a stronger sense of market presence.
+  3. QUANTITY AS QUALITY: In this directory, having too few publishable_matters can be detrimental. Ensure the narrative reflects a broad portfolio and high deal/matter flow. More evidence generally translates to a stronger sense of market presence.
   4. NARRATIVE BREADTH WITH ORDER: Use the extra space to develop a more thorough narrative, but keep it structured. Use descriptive content that proves "constancy" and "continuous market activity" rather than just isolated cases of sophistication.
   5. MULTI-JURISDICTIONAL REACH: Explicitly mention cross-border capabilities and jurisdictional breadth, as Legal 500 favors practices that show wide geographic and functional coverage.
   6. SUBSTANTIVE AMPLITUDE: Avoid empty marketing fluff. Every extra paragraph must add a new layer of evidence, market shift insight, or client impact.
@@ -20,23 +20,76 @@ copywriting_guidelines: |
 # ---------------------------------------------------------
 
 required_fields:
-  # Identity
+  # Identity & Contacts
   - "identity.firm_name"
   - "identity.country"
   - "identity.practice_area"
+  - "identity.interview_contacts.0.name"
   
-  # Department Info
+  # Department Info & Metrics
   - "department_info.team_name_internal"
+  - "department_info.heads_of_team.0.name"
   - "department_info.metrics.partners_count_50_percent_plus"
+  - "department_info.metrics.non_partners_count_50_percent_plus"
   
   # Narratives
   - "narratives.what_sets_us_apart"
   - "narratives.initiatives_and_innovation"
   - "narratives.rankings_feedback"
   
-  # Listas (puedes pedir el primer elemento para validar que no esté vacía)
+  # Clients
   - "clients.0.active_key_client"
-  - "matters.0.matter_description"
+  
+  # Individual Nominations
+  - "individual_nominations.leading_partners.0.name"
+  - "individual_nominations.next_generation_partners.0.name"
+  - "individual_nominations.leading_associates.0.name"
+  
+  # Team Dynamics
+  - "team_dynamics.arrivals_and_departures.0.name"
+  
+  # Work Highlights & Matters
+  - "work_highlights_summaries.0.publishable_summary"
+  - "publishable_matters.0.matter_description"
+  - "publishable_matters.1.matter_description"
+  - "publishable_matters.2.matter_description"
+  - "publishable_matters.3.matter_description"
+  - "publishable_matters.4.matter_description"
+  - "publishable_matters.5.matter_description"
+  - "publishable_matters.6.matter_description"
+  - "publishable_matters.7.matter_description"
+  - "publishable_matters.8.matter_description"
+  - "publishable_matters.9.matter_description"
+  - "publishable_matters.10.matter_description"
+  - "publishable_matters.11.matter_description"
+  - "publishable_matters.12.matter_description"
+  - "publishable_matters.13.matter_description"
+  - "publishable_matters.14.matter_description"
+  - "publishable_matters.15.matter_description"
+  - "publishable_matters.16.matter_description"
+  - "publishable_matters.17.matter_description"
+  - "publishable_matters.18.matter_description"
+  - "publishable_matters.19.matter_description"
+  - "confidential_matters.0.matter_description"
+  - "confidential_matters.1.matter_description"
+  - "confidential_matters.2.matter_description"
+  - "confidential_matters.3.matter_description"
+  - "confidential_matters.4.matter_description"
+  - "confidential_matters.5.matter_description"
+  - "confidential_matters.6.matter_description"
+  - "confidential_matters.7.matter_description"
+  - "confidential_matters.8.matter_description"
+  - "confidential_matters.9.matter_description"
+  - "confidential_matters.10.matter_description"
+  - "confidential_matters.11.matter_description"
+  - "confidential_matters.12.matter_description"
+  - "confidential_matters.13.matter_description"
+  - "confidential_matters.14.matter_description"
+  - "confidential_matters.15.matter_description"
+  - "confidential_matters.16.matter_description"
+  - "confidential_matters.17.matter_description"
+  - "confidential_matters.18.matter_description"
+  - "confidential_matters.19.matter_description"
 fields:
   firm_name:
     description: "The official name of the law firm."
@@ -59,7 +112,7 @@ fields:
   initiatives_and_innovation:
     description: "Narrative detailing measures introduced or maintained over the last year to benefit clients."
   rankings_feedback:
-    description: "The firm's strategic argument regarding their current ranking. If missing, ask the user to provide a persuasive, evidence-based argument justifying why the firm or a specific lawyer deserves to be elevated. Ask them what specific market shifts, recent hires, or complex matters justify this promotion."
+    description: "The firm's strategic argument regarding their current ranking. If missing, ask the user to provide a persuasive, evidence-based argument justifying why the firm or a specific lawyer deserves to be elevated. Ask them what specific market shifts, recent hires, or complex publishable_matters justify this promotion."
   active_key_client:
     description: "The official name of the active key clients, and whether they are publishable."
   leading_partners:
@@ -72,5 +125,5 @@ fields:
     description: "List of significant recent arrivals, departures, or promotions at the partner level."
   work_highlights_summaries:
     description: "Up to 3 brief summaries of publishable work highlights."
-  matters:
+  publishable_matters:
     description: "Detailed descriptions of specific work highlights, deal values, and team members involved."

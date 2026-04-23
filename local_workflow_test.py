@@ -169,6 +169,21 @@ def main():
     submission_obj = current_state.get("submission")
     if submission_obj:
         print(submission_obj.model_dump_json(indent=2)[:1500] + "\n... [Truncated for readability]")
+
+        # ========================================================
+        # NUEVO: DEBUGGER EXACTO DE PUBLISHABLE MATTERS
+        # ========================================================
+        print("\n=== 🕵️‍♂️ DEBUG: JSON EXACTO DE PUBLISHABLE MATTERS ===")
+        try:
+            # Extraemos específicamente los casos publicables y los convertimos a JSON
+            pub_matters = getattr(submission_obj, 'publishable_matters', [])
+            matters_dict = [m.model_dump() for m in pub_matters]
+            import json
+            print(json.dumps(matters_dict, indent=2))
+        except Exception as e:
+            print(f"Error al extraer publishable_matters: {e}")
+        print("====================================================\n")
+
     else:
         print("No submission object found.")
     print("-------------------------------------------\n")

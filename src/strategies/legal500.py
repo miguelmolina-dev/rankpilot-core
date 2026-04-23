@@ -78,9 +78,9 @@ class Legal500Strategy(SubmissionStrategy):
         context["Metrics"] = context.get("DepartmentInfo", {}).get("metrics", {})
 
         # 3. FIX THE MATTERS LOOP (Blank tables & Python lists)
-        all_matters = context.get("matters", [])
-        for m in all_matters:
-            # Fix the Python list string output (['USA', 'Mexico'] -> "USA, Mexico")
+        pub_matters = context.get("publishable_matters", [])
+        conf_matters = context.get("confidential_matters", [])
+        for m in pub_matters + conf_matters:
             if isinstance(m.get("jurisdictions_involved"), list):
                 m["jurisdictions_involved"] = ", ".join(m["jurisdictions_involved"])
             
@@ -96,10 +96,6 @@ class Legal500Strategy(SubmissionStrategy):
                 
             if not m.get("external_firms_advising"):
                 m["external_firms_advising"] = [{"firm_name": "", "role_details": "", "entity_advised": ""}]
-
-        # Separate matters into publishable and non-publishable
-        context["publishable_matters"] = [m for m in all_matters if m.get("is_publishable")]
-        context["non_publishable_matters"] = [m for m in all_matters if not m.get("is_publishable")]
 
         # 4. FIX THE WORK HIGHLIGHTS
         context["WorkHighlight"] = context.get("work_highlights_summaries", [])

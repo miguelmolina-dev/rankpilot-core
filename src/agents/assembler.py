@@ -82,6 +82,34 @@ def assembly_node(state: AgentState) -> dict:
         # --- NEW: Call the imported function cleanly ---
         convert_all_markdown_to_richtext(submission_dict)
 
+        # ========================================================
+        # 🕵️‍♂️ TRAMPA DE DEBUGGING: ¿Llegan los Publishable Matters al Assembler?
+        # ========================================================
+        print("\n" + "="*50)
+        print("🕵️‍♂️ DEBUG ASSEMBLER: VERIFICANDO PUBLISHABLE MATTERS")
+        print("="*50)
+        
+        if "publishable_matters" in submission_dict:
+            casos = submission_dict["publishable_matters"]
+            print(f"✅ La variable 'publishable_matters' EXISTE en el diccionario.")
+            print(f"📊 Cantidad de casos detectados: {len(casos)}")
+            
+            if len(casos) > 0:
+                print(f"📝 Nombre del primer cliente: {casos[0].get('client_name', 'SIN NOMBRE')}")
+                
+                # Vamos a asomarnos a ver si los abogados de este caso llegaron vivos
+                socios = casos[0].get('lead_partners', [])
+                if len(socios) > 0:
+                    print(f"👨‍⚖️ Primer Socio del primer caso: {socios[0].get('name', 'SIN NOMBRE')}")
+                else:
+                    print("⚠️ ALERTA: La lista de 'lead_partners' está vacía en este caso.")
+        else:
+            print("🚨 ALERTA ROJA FATAL: 'publishable_matters' NO EXISTE en el diccionario submission_dict.")
+            print("Las llaves que SÍ existen son:")
+            print(list(submission_dict.keys()))
+        print("="*50 + "\n")
+        # ========================================================
+
         # 3. Let the strategy assemble the document inside the temporary directory
         generated_path = strategy.assemble(submission_dict, temp_dir)
         

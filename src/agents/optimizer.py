@@ -1,7 +1,7 @@
 from typing import Dict, Any
 import json
 from src.core.state import AgentState
-from src.chains.optimizer_chain import optimizer_chain
+from src.chains.optimizer_chain import narrative_chain, matter_chain, summary_chain
 
 def optimize_node(state: AgentState) -> Dict[str, Any]:
     print("--- [NODE] Executing Submission Optimizer (Ghostwriter) ---")
@@ -13,44 +13,91 @@ def optimize_node(state: AgentState) -> Dict[str, Any]:
         updates["messages"].append("Optimizer skipped: No submission data found.")
         return updates
 
-    submission_json = submission_obj.model_dump_json()
-    
-    # --- NUEVO: Extraemos las reglas del YAML ---
     config = getattr(state, "config", {})
-    guidelines = config.get("copywriting_guidelines", "Follow standard professional, objective, and factual legal writing standards. Avoid marketing fluff.")
+    guidelines = config.get("copywriting_guidelines", "Follow standard professional legal writing standards.")
+    
+    # Pasamos el objeto a diccionario para poder modificarlo
+    sub_dict = submission_obj.model_dump()
 
+    # ========================================================
+    # 1. OPTIMIZAR NARRATIVAS (Visión de la Firma)
+    # ========================================================
+    print("--- [DEBUG] Optimizing Narratives ---")
     try:
-        print("--- [DEBUG] Calling Optimizer LLM ---")
-        response = optimizer_chain.invoke({
-            "submission_json": submission_json,
-            "copywriting_guidelines": guidelines # <-- Inyectado
+        narrative_context = {
+            "narratives": sub_dict.get("narratives", {})
+        }
+        
+        nar_resp = narrative_chain.invoke({
+            "narrative_json": json.dumps(narrative_context),
+            "copywriting_guidelines": guidelines
         })
         
-        sub_dict = submission_obj.model_dump()
-        
-        if "B_department_information" in sub_dict and sub_dict["B_department_information"]:
-            sub_dict["B_department_information"]["B10_department_best_known_for"] = response.narratives.best_known_for
-        elif "narratives" in sub_dict and sub_dict["narratives"]:
-            sub_dict["narratives"]["what_sets_us_apart"] = response.narratives.best_known_for
-
-        if "D_publishable_information" in sub_dict and sub_dict["D_publishable_information"]:
-            matters = sub_dict["D_publishable_information"].get("publishable_matters", [])
-            for i, matter in enumerate(matters):
-                opt_matter = next((m for m in response.matters if m.matter_id == i), None)
-                if opt_matter:
-                    matter["D2_summary_of_matter_and_role"] = opt_matter.optimized_description
-
-        if "matters" in sub_dict:
-            for i, matter in enumerate(sub_dict["matters"]):
-                opt_matter = next((m for m in response.matters if m.matter_id == i), None)
-                if opt_matter:
-                    matter["matter_description"] = opt_matter.optimized_description
-
-        updates["submission"] = type(submission_obj)(**sub_dict)
-        updates["messages"].append("SUCCESS: Submission narratives and matters strategically optimized based on Directory Rules.")
-
+        if "narratives" in sub_dict and sub_dict["narratives"]:
+            if nar_resp.what_sets_us_apart:
+                sub_dict["narratives"]["what_sets_us_apart"] = nar_resp.what_sets_us_apart
+            if nar_resp.initiatives_and_innovation:
+                sub_dict["narratives"]["initiatives_and_innovation"] = nar_resp.initiatives_and_innovation
     except Exception as e:
-        print(f"!!! Optimizer Failure: {e}")
-        updates["messages"].append(f"WARNING: Optimization failed. Error: {e}")
+        print(f"!!! Narrative Optimization Failed: {e}")
+
+    # ========================================================
+    # 2. OPTIMIZAR WORK HIGHLIGHTS SUMMARIES (Legal 500)
+    # ========================================================
+    print("--- [DEBUG] Optimizing Work Highlights Summaries ---")
+    summaries = sub_dict.get("work_highlights_summaries", [])
+    for i, summary in enumerate(summaries):
+        try:
+            raw_text = summary.get("publishable_summary", "")
+            if raw_text and len(raw_text.split()) > 30: # Solo condensamos si es muy largo
+                print(f"  -> Condensing Summary {i+1} / {len(summaries)} down to 40 words...")
+                s_resp = summary_chain.invoke({
+                    "raw_summary": raw_text
+                })
+                # Reemplazamos el texto largo por la versión condensada
+                summary["publishable_summary"] = s_resp.short_summary
+            else:
+                print(f"  -> Summary {i+1} is already short. Skipping.")
+        except Exception as e:
+            print(f"  -> Error condensing Summary {i+1}: {e}")
+
+    # ========================================================
+    # 3. OPTIMIZAR CASOS PUBLICABLES (El Especialista)
+    # ========================================================
+    print("--- [DEBUG] Optimizing Publishable Matters ---")
+    publishable = sub_dict.get("publishable_matters", [])
+    for i, matter in enumerate(publishable):
+        try:
+            print(f"  -> Rewriting Publishable Matter {i+1} / {len(publishable)}...")
+            m_resp = matter_chain.invoke({
+                "matter_json": json.dumps(matter),
+                "copywriting_guidelines": guidelines,
+                "confidential_status": "FALSE (Publishable)"
+            })
+            matter["matter_description"] = m_resp.optimized_description
+        except Exception as e:
+            print(f"  -> Error rewriting Matter {i+1}: {e}")
+
+    # ========================================================
+    # 3. OPTIMIZAR CASOS CONFIDENCIALES
+    # ========================================================
+    print("--- [DEBUG] Optimizing Confidential Matters ---")
+    confidential = sub_dict.get("confidential_matters", [])
+    for i, matter in enumerate(confidential):
+        try:
+            print(f"  -> Rewriting Confidential Matter {i+1} / {len(confidential)}...")
+            m_resp = matter_chain.invoke({
+                "matter_json": json.dumps(matter),
+                "copywriting_guidelines": guidelines,
+                "confidential_status": "TRUE (Strictly Confidential - Focus on mechanics, protect identities)"
+            })
+            matter["matter_description"] = m_resp.optimized_description
+        except Exception as e:
+            print(f"  -> Error rewriting Matter {i+1}: {e}")
+
+    # Empaquetamos de vuelta a Pydantic
+    updates["submission"] = type(submission_obj)(**sub_dict)
+    updates["messages"].append(f"SUCCESS: Optimized Narratives and {len(publishable) + len(confidential)} Matters.")
+    print("--- [SUCCESS] Ghostwriter complete ---")
 
     return updates

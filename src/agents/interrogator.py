@@ -69,6 +69,22 @@ def interrogator_node(state: AgentState) -> dict:
             # =======================================================
             # 4. EL CEREBRO DEL ESTRATEGA (Prompts Dinámicos)
             # =======================================================
+
+            is_matter_request = "matters" in field.lower()
+            matter_instruction = ""
+
+            if is_matter_request:
+                # Intentamos extraer el número del caso (ej. publishable_matters.3.matter_description -> 3)
+                try:
+                    index = int(field.split(".")[1]) + 1 # Le sumamos 1 para que sea "Matter 4"
+                    matter_instruction = (
+                        f"\n\n🚨 CRITICAL MATTER OVERRIDE 🚨\n"
+                        f"The Target Field '{field}' indicates you need to ask for a BRAND NEW, COMPLETELY DIFFERENT case/transaction (Matter #{index}).\n"
+                        f"DO NOT ask for more details about the previous client or case. Validate their previous answer briefly, "
+                        f"and then explicitly ask the Partner to introduce a NEW client and a NEW case to demonstrate the firm's volume and depth."
+                    )
+                except:
+                    matter_instruction = "\n\n🚨 CRITICAL: You must ask for a NEW, DIFFERENT case/transaction. Do not ask about the previous case."
             
             # SYSTEM PROMPT: La personalidad inquebrantable
             system_prompt = (
@@ -105,6 +121,7 @@ def interrogator_node(state: AgentState) -> dict:
                     "--- NEXT OBJECTIVE ---\n"
                     "Target Field needed: {field}\n"
                     "Reason: {reason}\n\n"
+                    "{matter_instruction}\n\n"
                     "--- YOUR TASK (STRICT RULES) ---\n"
                     "1. DO NOT GREET THE PARTNER. DO NOT SAY 'Welcome', 'To start', or 'To begin'. The meeting has been going on for a while.\n"
                     "2. CONTEXTUAL AWARENESS: Read the 'Conversation History'. Ensure your next response feels connected to the ongoing dialogue.\n"
@@ -117,7 +134,8 @@ def interrogator_node(state: AgentState) -> dict:
                     "reason": reason,
                     "current_submission_context": current_submission_context,
                     "conversation_history": conversation_history,
-                    "previous_answer_text": previous_answer_text
+                    "previous_answer_text": previous_answer_text,
+                    "matter_instruction": matter_instruction
                 }
 
             prompt = ChatPromptTemplate.from_messages([

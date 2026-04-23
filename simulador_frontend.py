@@ -2,6 +2,8 @@ import requests
 import time
 import uuid
 import json
+import base64  # <-- NUEVO: Para convertir el archivo
+import os      # <-- NUEVO: Para verificar que el archivo existe
 
 # URL base donde corre nuestro simulador FastAPI
 BASE_URL = "http://127.0.0.1:8000"
@@ -24,8 +26,32 @@ def main():
     
     if opcion == "1":
         input_type = "docx"
-        base64_docs = [{"filename": "documento_falso.docx", "base64": "JVBERi0xLj..."}]
-        print("\n[Simulando archivo .docx convertido a Base64...]")
+        print("\n[Simulador de Carga de Archivos]")
+        # El .strip('"') es un truco por si arrastras el archivo a la consola en Windows
+        # Vuelve a dejar la línea así:
+        ruta_archivo = input("📁 Arrastra o pega la ruta completa de tu archivo (.docx o .pdf): ").strip('"').strip("'")
+        
+        if os.path.exists(ruta_archivo):
+            try:
+                # 1. Leemos el archivo en modo binario
+                with open(ruta_archivo, "rb") as archivo:
+                    contenido_binario = archivo.read()
+                
+                # 2. Lo convertimos a Base64 y luego a un string de texto
+                base64_string = base64.b64encode(contenido_binario).decode('utf-8')
+                
+                # 3. Extraemos solo el nombre del archivo (ej. "mi_caso.docx")
+                nombre_archivo = os.path.basename(ruta_archivo)
+                
+                base64_docs = [{"filename": nombre_archivo, "base64": base64_string}]
+                print(f"✅ Archivo '{nombre_archivo}' cargado y convertido a Base64 exitosamente!")
+                
+            except Exception as e:
+                print(f"❌ Error al leer o convertir el archivo: {e}")
+                return
+        else:
+            print(f"❌ Error: No se encontró ningún archivo en la ruta: {ruta_archivo}")
+            return
     elif opcion == "2":
         input_type = "raw_text"
         raw_text = input("\nPega tu texto crudo aquí: ")
