@@ -82,12 +82,14 @@ def run_workflow_task(job_id: str, initial_state: dict, config: dict):
         exec_summary_dict = exec_summary.model_dump() if hasattr(exec_summary, 'model_dump') else exec_summary
 
         final_agent_state = {
+            "submission_id": final_state.get("submission_id"), # <-- AÑADIDO: Vital para Laravel
+            "next_node": final_state.get("next_node"),         # <-- AÑADIDO: El ruteo
             "metadata": final_state.get("metadata", {}),
             "submission": sub_dict,
-            "gaps": final_state.get("gaps", []),
+            "gaps": final_state.get("gaps", []),               # <-- Aquí viajan los gaps
             "dismissed_gaps": final_state.get("dismissed_gaps", []),
             "questions": final_state.get("questions", []),
-            "new_answer": {"target_field": "", "question_text": "", "answer": ""},
+            "new_answer": final_state.get("new_answer", {}),   # <-- CORREGIDO: Ya no borra la pregunta
             "output_base64": final_state.get("output_base64"),
             "evolution_path": final_state.get("evolution_path", []),
             "executive_summary": exec_summary_dict,
