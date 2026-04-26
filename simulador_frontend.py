@@ -28,7 +28,6 @@ def main():
         input_type = "docx"
         print("\n[Simulador de Carga de Archivos]")
         # El .strip('"') es un truco por si arrastras el archivo a la consola en Windows
-        # Vuelve a dejar la línea así:
         ruta_archivo = input("📁 Arrastra o pega la ruta completa de tu archivo (.docx o .pdf): ").strip('"').strip("'")
         
         if os.path.exists(ruta_archivo):
@@ -99,6 +98,9 @@ def main():
         
         # --- Bucle de Polling ---
         while True:
+            # Imprimimos qué endpoint estamos consultando
+            print(f"\n[GET] {BASE_URL}/status/{current_job_id}")
+            
             status_response = requests.get(f"{BASE_URL}/status/{current_job_id}")
             if status_response.status_code != 200:
                 print("❌ Error en el polling:", status_response.text)
@@ -106,19 +108,34 @@ def main():
                 
             status_data = status_response.json()
             
-            if status_data["status"] == "processing":
-                # Dibujamos una barra de progreso rudimentaria en la consola
-                progreso = status_data['progress']
+            # ---> AQUÍ ESTÁ LA MAGIA: Imprimimos el JSON exacto de la respuesta
+            print("📦 JSON recibido del servidor:")
+            print(json.dumps(status_data, indent=2))
+            
+            if status_data["status"] == "started" or status_data["status"] == "processing":
+                progreso = status_data.get('progress', 0)
                 barra = "█" * (progreso // 5) + "-" * (20 - (progreso // 5))
-                print(f"\r[{barra}] {progreso}% - {status_data['message']}", end="", flush=True)
+                # Quitamos el \r para que el JSON no se borre de la consola
+                print(f"[{barra}] {progreso}% - {status_data.get('message', '')}")
                 time.sleep(2) # Esperar 2 segundos
                 
             elif status_data["status"] == "completed":
-                print(f"\r[{'█'*20}] 100% - ¡Proceso Completado!        ")
+                print(f"\n[{'█'*20}] 100% - ¡Proceso Completado!")
                 break # Salimos del bucle de polling
+            
+            elif status_data["status"] == "failed":
+                print("\n❌ EL TRABAJO FALLÓ EN EL SERVIDOR.")
+                break
         
+        if status_data["status"] == "failed":
+            break
+            
         # --- Evaluación del Resultado ---
         ia_data = status_data.get("data", {})
+        if not ia_data:
+            print("⚠️ Advertencia: No se encontró la llave 'data' en el JSON completado.")
+            break
+            
         gaps = ia_data.get("gaps", [])
         
         # Actualizamos nuestro agent_state con lo que nos devolvió la IA
@@ -135,16 +152,16 @@ def main():
         # SI HAY GAPS: Iniciamos el chat
         print_header(f"🛑 AUDIT ROOM: {len(gaps)} errores encontrados")
         
-        # Mostramos la pregunta de la IA
-        pregunta = ia_data["questions"][0]
+        # Extraemos la pregunta de forma segura
+        preguntas = ia_data.get("questions", [])
+        pregunta = preguntas[0] if preguntas else "¿Puedes proporcionar más detalles sobre esto?"
         print(f"🤖 IA: {pregunta}")
         
         # Pedimos respuesta al usuario por consola
         respuesta_usuario = input("\n👤 Tu respuesta: ")
         
         # Simulamos que el usuario le da clic a "Synthesize Answer"
-        # Preparamos el nuevo JSON para enviar
-        gap_actual = gaps[0]["field"]
+        gap_actual = gaps[0]["field"] if gaps else "general"
         
         agent_state["new_answer"] = {
             "target_field": gap_actual,
@@ -160,10 +177,13 @@ def main():
         print("\n📡 Enviando respuesta POST a /api/process...")
         resp = requests.post(f"{BASE_URL}/process", json=payload_respuesta)
         
+        if resp.status_code != 200:
+             print("❌ Error al enviar la respuesta:", resp.text)
+             break
+             
         # Recibimos el nuevo ticket y el ciclo grande se repite
-        current_job_id = resp.json()["job_id"]
+        current_job_id = resp.json().get("job_id")
         print(f"✅ Nuevo Ticket recibido! Job ID: {current_job_id}")
 
 if __name__ == "__main__":
-    # Necesitas tener instalada la librería requests: pip install requests
     main()

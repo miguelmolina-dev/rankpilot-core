@@ -6,11 +6,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from src.core.state import AgentState
 
 class AnswerIntent(BaseModel):
-    action: Literal["fill", "dismiss"] = Field(
-        description="Must be 'fill' if the user provided valid data, or 'dismiss' if the user wants to skip."
+    # --- NUEVO: Agregamos "clarify" a las opciones ---
+    action: Literal["fill", "dismiss", "clarify"] = Field(
+        description="Must be 'fill' (valid data), 'dismiss' (user skips), or 'clarify' (user asks a question or is confused)."
     )
     extracted_value: str = Field(
-        description="The extracted data. If it's a list or object, provide it as a valid JSON string. If it's a simple text, just the text."
+        description="The extracted data. If action is clarify, leave blank."
     )
 
     class Config:
@@ -132,8 +133,10 @@ def process_answer_node(state: AgentState) -> dict:
             "You are an expert data extraction AI evaluating a user's answer for a legal directory submission.\n"
             "Your goal is to extract the user's answer to populate the target field: '{field}'.\n\n"
             "CRITICAL INSTRUCTIONS:\n"
-            "1. DECIDING THE ACTION: If the user provides ANY valid, relevant information, you MUST set action to 'fill'. "
-            "ONLY set action to 'dismiss' if the user explicitly says 'skip', 'ignore', 'I don't have this', or provides absolute gibberish.\n"
+            "1. DECIDING THE ACTION:\n"
+            "   - 'fill': The user provided valid, relevant information.\n"
+            "   - 'dismiss': The user explicitly says 'skip', 'ignore', 'I don't have this', or provides absolute gibberish.\n"
+            "   - 'clarify': The user asks a question, requests clarification (e.g., 'What do you mean?', 'A junior partner?'), or expresses confusion. DO NOT dismiss in this case.\n"
             "2. EXTRACTED VALUE: Output the extracted value based on the user's text. If the target is an object or list, format it strictly as a JSON string. If it's a text field, just output the clean text.\n\n"
             "Here is the strict JSON schema for context: \n{schema}"
         )
@@ -146,19 +149,33 @@ def process_answer_node(state: AgentState) -> dict:
         chain = prompt | structured_llm
         result = chain.invoke({"field": target_field, "answer": user_text, "schema": schema_context})
         
-        # --- RED DE SEGURIDAD REPARADA ---
+        # --- RED DE SEGURIDAD REPARADA Y MEJORADA ---
         safe_action = result.action
         
-        # Si la IA dice dismiss pero extrajo un texto largo, se equivocó y es un fill.
-        if safe_action == "dismiss" and result.extracted_value and len(str(result.extracted_value)) > 15:
+        # 1. Si el usuario hace una pregunta directa, forzamos la aclaración para no perder el gap
+        if "?" in user_text and safe_action == "dismiss":
+            safe_action = "clarify"
+
+        # 2. Si la IA dice dismiss pero extrajo un texto largo, se equivocó y es un fill.
+        elif safe_action == "dismiss" and result.extracted_value and len(str(result.extracted_value)) > 15:
             safe_action = "fill"
-        elif safe_action not in ["fill", "dismiss"] and result.extracted_value:
+        elif safe_action not in ["fill", "dismiss", "clarify"] and result.extracted_value:
             safe_action = "fill"
 
         updates["messages"].append(f"DEBUG: LLM decided action='{result.action}' -> safe_action='{safe_action}'")
 
-        # FIX: Ahora evaluamos con safe_action en lugar de result.action
-        if safe_action == "dismiss":
+        # =======================================================
+        # EL NUEVO CAMINO DE ACLARACIÓN
+        # =======================================================
+        if safe_action == "clarify":
+            updates["messages"].append(f"Answer Evaluator: User requested clarification for '{target_field}'. Leaving gap open.")
+            # 🚨 MUY IMPORTANTE: Retornamos inmediatamente SIN borrar el 'new_answer'
+            # Esto permite que el Interrogador lea la pregunta del usuario y le responda.
+            return updates
+        
+        # =======================================================
+
+        elif safe_action == "dismiss":
             current_dismissed = getattr(state, "dismissed_gaps", [])
             if target_field not in current_dismissed:
                 current_dismissed.append(target_field)
@@ -168,20 +185,20 @@ def process_answer_node(state: AgentState) -> dict:
         elif safe_action == "fill":
             updates["messages"].append(f"DEBUG: Valor extraído por LLM: {str(result.extracted_value)[:100]}...")
             
-            # --- NUEVO: INTERCEPTOR DE METADATA ---
+            # --- INTERCEPTOR DE METADATA ---
             if target_field.startswith("metadata."):
-                meta_key = target_field.split(".")[1] # Extrae "submission_deadline"
+                meta_key = target_field.split(".")[1]
                 metadata_obj = getattr(state, "metadata", None)
                 
                 if metadata_obj:
-                    # Inyectamos el valor en el objeto metadata
                     setattr(metadata_obj, meta_key, result.extracted_value)
                     updates["metadata"] = metadata_obj
                     updates["messages"].append(f"SUCCESS: Metadata '{meta_key}' updated to '{result.extracted_value}'.")
                 
-                # Limpiamos y salimos para que no intente guardarlo en el documento
                 updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
                 return updates
+
+            # --- INYECCIÓN EN EL SUBMISSION ---
             if submission:
                 sub_dict = submission.model_dump()
                 
@@ -216,5 +233,6 @@ def process_answer_node(state: AgentState) -> dict:
         import traceback
         updates["messages"].append(f"FATAL ERROR: {str(e)} | Traceback: {traceback.format_exc()[:500]}")
 
+    # Borrado regular si fue fill o dismiss
     updates["new_answer"] = {"target_field": "", "question_text": "", "answer": ""}
     return updates

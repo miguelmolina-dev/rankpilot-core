@@ -6,7 +6,7 @@ from src.core.llm import get_llm
 
 class StrategicQuestion(BaseModel):
     question: str = Field(
-        description="A strategic question asking for the specific missing information."
+        description="The complete verbal response to the Partner. It MUST include your conversational clarification or validation FIRST, followed immediately by the targeted question."
     )
 
 def interrogator_node(state: AgentState) -> dict:
@@ -51,20 +51,23 @@ def interrogator_node(state: AgentState) -> dict:
             else:
                 conversation_history = "No previous conversation. This is the beginning."
 
-            # 3. CONCIENCIA DE ESTADO: ¿Es la primera pregunta o ya estamos en medio de la reunión?
-            submission_data = getattr(state, "submission", None)
-            is_first_question = True
+            # 3. CONCIENCIA DE ESTADO: ¿Es la primera vez que le hablamos al usuario?
+            history_data = getattr(state, "history", [])
+            previous_answer_text = getattr(state, "new_answer", {}).get("answer", "").strip()
             
+            # 🚨 LA CLAVE: Si el usuario mandó un texto, YA NO es la primera interacción.
+            is_first_interaction = (len(history_data) == 0) and (not previous_answer_text)
+
+            submission_data = getattr(state, "submission", None)
             if submission_data:
-                # Limpiamos los campos vacíos para ver si realmente hay información guardada
+                # Limpiamos los campos vacíos para ver la "carne" de lo que se extrajo
                 dump = submission_data.model_dump(exclude_none=True)
                 dump = {k: v for k, v in dump.items() if v and str(v) != "{}" and str(v) != "[]"}
-                
                 current_submission_context = str(dump).replace("{", "{{").replace("}", "}}")
-                if len(dump) > 0:
-                    is_first_question = False # ¡Ya hay datos! Prohibido saludar.
             else:
                 current_submission_context = "No information extracted yet."
+
+            input_type = getattr(state, "input_document_type", "unknown")
 
             # =======================================================
             # 4. EL CEREBRO DEL ESTRATEGA (Prompts Dinámicos)
@@ -74,17 +77,16 @@ def interrogator_node(state: AgentState) -> dict:
             matter_instruction = ""
 
             if is_matter_request:
-                # Intentamos extraer el número del caso (ej. publishable_matters.3.matter_description -> 3)
                 try:
-                    index = int(field.split(".")[1]) + 1 # Le sumamos 1 para que sea "Matter 4"
+                    index = int(field.split(".")[1]) + 1 
                     matter_instruction = (
-                        f"\n\n🚨 CRITICAL MATTER OVERRIDE 🚨\n"
-                        f"The Target Field '{field}' indicates you need to ask for a BRAND NEW, COMPLETELY DIFFERENT case/transaction (Matter #{index}).\n"
-                        f"DO NOT ask for more details about the previous client or case. Validate their previous answer briefly, "
-                        f"and then explicitly ask the Partner to introduce a NEW client and a NEW case to demonstrate the firm's volume and depth."
+                        f"\n\n🚨 CRITICAL OVERRIDE: NEW MATTER REQUIRED 🚨\n"
+                        f"Target field '{field}' means you must ask the Partner for Matter #{index}.\n"
+                        f"Look at the 'Extracted Firm Data'. You already have information for the previous matters.\n"
+                        f"DO NOT ask for more details about the clients already listed. Explicitly ask the Partner to introduce a COMPLETELY NEW, unmentioned client and case to demonstrate volume."
                     )
                 except:
-                    matter_instruction = "\n\n🚨 CRITICAL: You must ask for a NEW, DIFFERENT case/transaction. Do not ask about the previous case."
+                    matter_instruction = "\n\n🚨 CRITICAL: You must ask for a NEW, DIFFERENT case/transaction. Do not ask about previous cases."
             
             # SYSTEM PROMPT: La personalidad inquebrantable
             system_prompt = (
@@ -92,25 +94,46 @@ def interrogator_node(state: AgentState) -> dict:
                 "You are in a live, high-stakes strategy room with the Managing Partner.\n\n"
                 "CRITICAL BEHAVIORAL RULES:\n"
                 "1. BE ALIVE & HUMAN: Never sound like a chatbot. You are a sharp, perceptive human expert.\n"
-                "2. NO REPETITION: You must sound conversational. Flow naturally from one topic to the next based on the Conversation History.\n"
+                "2. NO REPETITION: Flow naturally. Make it sound like a high-level strategic discussion.\n"
                 "3. Speak peer-to-peer using a highly sophisticated, corporate, and analytical tone."
             )
 
-            # Dependiendo del caso, definimos el prompt y SOLO las variables que ese prompt necesita
-            if is_first_question:
+            # --- RAMIFICACIÓN DE PROMPTS SEGÚN EL ESCENARIO ---
+            
+            if is_first_interaction and input_type in ["docx", "pdf", "raw_text"] and len(current_submission_context) > 20:
+                # RAMA 1: EL "FAN SERVICE"
+                user_prompt = (
+                    "--- EXTRACTED FIRM DATA SO FAR ---\n"
+                    "{current_submission_context}\n\n"
+                    "Target Field needed: {field}\n"
+                    "Reason: {reason}\n\n"
+                    "--- YOUR TASK (THE FAN SERVICE HOOK) ---\n"
+                    "1. The Partner just submitted their initial draft for your review.\n"
+                    "2. Start with a 1-2 sentence strategic mini-audit: Validate their work. Explicitly mention a specific strength, impressive client, or standout matter you see in the 'Extracted Firm Data' to prove you read it and are impressed.\n"
+                    "3. Make them feel recognized as a top-tier firm.\n"
+                    "4. Then, seamlessly pivot to the missing '{field}'. Justify WHY we need this specific information to elevate the submission even further, and ask exactly ONE targeted question to obtain it."
+                )
+                prompt_vars = {
+                    "field": field,
+                    "reason": reason,
+                    "current_submission_context": current_submission_context
+                }
+
+            elif is_first_interaction:
+                # RAMA 2: START FROM SCRATCH
                 user_prompt = (
                     "Target Field needed: {field}\n"
                     "Reason: {reason}\n\n"
-                    "TASK:\n"
+                    "--- YOUR TASK ---\n"
                     "Give a warm, brief, and highly professional welcome to the strategy session. "
-                    "Then, smoothly ask the Partner to provide the information for '{field}' to lay the foundation of the submission."
+                    "Then, smoothly ask the Partner to provide the information for '{field}' to lay the foundation of our submission."
                 )
-                # Diccionario exacto para la primera pregunta
-                prompt_vars = {
-                    "field": field,
-                    "reason": reason
-                }
+                prompt_vars = {"field": field, "reason": reason}
+
             else:
+                # RAMA 3: EN MEDIO DE LA REUNIÓN (CONVERSACIÓN ACTIVA)
+                conversation_history = "\n".join(history_data[-6:]) if history_data else "No previous conversation."
+                
                 user_prompt = (
                     "--- FIRM LORE & EXTRACTED DATA SO FAR ---\n"
                     "{current_submission_context}\n\n"
@@ -123,12 +146,11 @@ def interrogator_node(state: AgentState) -> dict:
                     "Reason: {reason}\n\n"
                     "{matter_instruction}\n\n"
                     "--- YOUR TASK (STRICT RULES) ---\n"
-                    "1. DO NOT GREET THE PARTNER. DO NOT SAY 'Welcome', 'To start', or 'To begin'. The meeting has been going on for a while.\n"
-                    "2. CONTEXTUAL AWARENESS: Read the 'Conversation History'. Ensure your next response feels connected to the ongoing dialogue.\n"
-                    "3. ACTIVE LISTENING: Start with ONE highly insightful sentence validating their strategy based on the 'Firm Lore' or their 'Recent Statement'. Prove you are a strategic partner.\n"
-                    "4. Smoothly pivot and ask exactly ONE targeted question to obtain the '{field}'. Make it sound like the natural, logical next step."
+                    "1. DO NOT GREET THE PARTNER. The meeting has been going on for a while.\n"
+                    "2. CLARIFICATION & ACTIVE LISTENING: If the Partner's Input is a question or shows confusion (e.g. asking 'What do you mean?'), YOU MUST ANSWER THEIR QUESTION directly and briefly based on directory standards. Do this FIRST.\n"
+                    "3. Smoothly pivot and ask exactly ONE targeted question to obtain the '{field}'.\n"
+                    "4. Your final output MUST combine BOTH the answer to their doubt AND your new question into a single, natural paragraph."
                 )
-                # Diccionario exacto para las siguientes preguntas
                 prompt_vars = {
                     "field": field,
                     "reason": reason,
