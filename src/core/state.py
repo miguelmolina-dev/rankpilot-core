@@ -1,6 +1,6 @@
 import operator
 from typing import Annotated, List, Dict, Any, Optional, Union
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from src.core.schemas import BaseSubmission
 
 # ==========================================
@@ -49,6 +49,16 @@ class MetaData(BaseModel):
         description="The official deadline for this submission. Used by the Scheduler to calculate urgency."
     )
     firm_name: str = ""
+
+    # 👇 ESTE ES EL ESCUDO CONTRA EL NULL DE LARAVEL 👇
+    @model_validator(mode="before")
+    @classmethod
+    def sanitize_nulls_from_php(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            for k, v in data.items():
+                if v is None:
+                    data[k] = "" # Convertimos el null de PHP a un string vacío de Python
+        return data
 
 
 # ==========================================
