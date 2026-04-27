@@ -22,9 +22,9 @@ jobs:
             echo "Step 1"
             cd ${{ secrets.APP_DIR }}
             echo "Step 2"
-            git checkout develop
+            sudo git checkout develop
             echo "Step 3"
-            git pull origin develop
+            sudo git pull origin develop
             echo "Step 4"
             cd ${{ secrets.APP_DIR_BASE }}
             echo "Step 5"
