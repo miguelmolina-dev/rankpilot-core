@@ -178,7 +178,7 @@ class PreliminaryInformation(BaseModel):
 # Section B: Department Information
 # -----------------------------------
 class PartnerStats(BaseModel):
-    total_number: Optional[Any] = Field(None, description="The total raw integer number of lawyers/partners in this category. Return 0 if none.")
+    total_number: Optional[int] = Field(None, description="The total raw integer number of lawyers/partners in this category. Return 0 if none.")
     male_ratio_percentage: Optional[str] = Field(None, description="The percentage of males. Include the '%' sign if present in text.")
     female_ratio_percentage: Optional[str] = Field(None, description="The percentage of females. Include the '%' sign if present in text.")
 

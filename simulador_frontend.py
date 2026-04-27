@@ -65,10 +65,11 @@ def main():
     thread_id = str(uuid.uuid4())
     agent_state = {
         "metadata": {
-            "directory": "Legal500",
+            "directory": "Chambers",
             "guide": "Latin America",
             "practice_area": "Fintech"
         },
+        "target_submission_type": "Chambers",
         "input_document_type": input_type,
         "base64_documents": base64_docs,
         "raw_input_text": raw_text,
