@@ -22,12 +22,14 @@ jobs:
             echo "Step 1"
             cd ${{ secrets.APP_DIR }}
             echo "Step 2"
-            sudo git checkout develop
+            git fetch origin
             echo "Step 3"
-            sudo git pull origin develop
+            git checkout develop
             echo "Step 4"
-            cd ${{ secrets.APP_DIR_BASE }}
+            git pull origin develop
             echo "Step 5"
-            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
+            cd ${{ secrets.APP_DIR_BASE }}
             echo "Step 6"
+            sudo docker-compose -f ${{ secrets.COMPOSEFILE }} down
+            echo "Step 7"
             sudo docker-compose -f ${{ secrets.COMPOSEFILE }} up -d --build
