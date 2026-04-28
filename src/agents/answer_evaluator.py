@@ -80,8 +80,22 @@ def process_answer_node(state: AgentState) -> dict:
     updates = {"messages": []}
     answer_data = getattr(state, "new_answer", {})
     answer_text = answer_data.get("answer", "").strip().upper()
+    # Capturamos también la pregunta para el historial:
+    question_text = answer_data.get("question_text", "").strip()
     current_gaps = getattr(state, "gaps", []) or []
     dismissed = getattr(state, "dismissed_gaps", []) or []
+
+    # Traemos el historial actual
+    current_history = getattr(state, "history", []) or []
+
+    # =========================================================
+    # 0. GUARDAR LA MEMORIA (El antídoto para la amnesia)
+    # =========================================================
+    if answer_data.get("answer"):  # Usamos el original, no el .upper()
+        # Guardamos el diálogo en el historial
+        current_history.append(f"AI: {question_text}")
+        current_history.append(f"Partner: {answer_data.get('answer')}")
+        updates["history"] = current_history
 
     # =========================================================
     # 1. COMANDOS TÁCTICOS DE UX (El Bucle de Asistencia)
